@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package simulation;
+
+option go_package = "github.com/jelech/rl_env_engine/proto/simulation";
+
+// SimulationService 定义仿真服务的gRPC接口
+service SimulationService {
+  // GetInfo 获取服务信息
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+  
+  // CreateEnvironment 创建环境
+  rpc CreateEnvironment(CreateEnvironmentRequest) returns (CreateEnvironmentResponse);
+  
+  // ResetEnvironment 重置环境
+  rpc ResetEnvironment(ResetEnvironmentRequest) returns (ResetEnvironmentResponse);
+  
+  // StepEnvironment 执行一步仿真
+  rpc StepEnvironment(StepEnvironmentRequest) returns (StepEnvironmentResponse);
+  
+  // CloseEnvironment 关闭环境
+  rpc CloseEnvironment(CloseEnvironmentRequest) returns (CloseEnvironmentResponse);
+  
+  // StreamStep 流式执行仿真步骤 (可选，用于实时仿真)
+  rpc StreamStep(stream StepEnvironmentRequest) returns (stream StepEnvironmentResponse);
+}
+
+// 基础消息类型
+message GetInfoRequest {}
+
+message GetInfoResponse {
+  repeated string scenarios = 1;
+  repeated string env_ids = 2;
+  map<string, string> info = 3;
+  string version = 4;
+  string name = 5;
+}
+
+message CreateEnvironmentRequest {
+  string env_id = 1;
+  string scenario = 2;
+  map<string, string> config = 3;
+}
+
+message CreateEnvironmentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ResetEnvironmentRequest {
+  string env_id = 1;
+}
+
+message ResetEnvironmentResponse {
+  repeated Observation observations = 1;
+  map<string, string> info = 2;
+}
+
+message StepEnvironmentRequest {
+  string env_id = 1;
+  Action action = 2;
+}
+
+message StepEnvironmentResponse {
+  repeated Observation observations = 1;
+  repeated double rewards = 2;
+  repeated bool done = 3;
+  map<string, string> info = 4;
+}
+
+message CloseEnvironmentRequest {
+  string env_id = 1;
+}
+
+message CloseEnvironmentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 数据类型定义
+message Observation {
+  repeated double data = 1;
+  map<string, string> metadata = 2;
+}
+
+message Action {
+  // 支持多种action类型，使用oneof
+  oneof action_type {
+    SimpleAction simple_action = 1;
+    // 可以在这里添加其他action类型
+  }
+}
+
+message SimpleAction {
+  double value = 1;
+}
