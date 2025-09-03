@@ -1,4 +1,4 @@
-# RL Env Framework
+# RL Env Engine
 
 一个面向强化学习（RL）的高性能 Go 仿真框架，支持多场景、多环境并发训练，提供 gRPC 与 HTTP 两套 API，并内置 Python/SB3 集成能力。
 
