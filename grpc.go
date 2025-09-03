@@ -1,4 +1,4 @@
-package simulations
+package rl_env_engine
 
 import (
 	"fmt"

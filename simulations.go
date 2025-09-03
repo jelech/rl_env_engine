@@ -1,6 +1,6 @@
 // Package simulations provides a flexible simulation framework for various scenarios.
 // It supports reinforcement learning capabilities with extensible scenario support.
-package simulations
+package rl_env_engine
 
 import (
 	"context"
