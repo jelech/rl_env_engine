@@ -36,6 +36,10 @@ func NewGrpcServer() *GrpcServer {
 	}
 }
 
+func (s *GrpcServer) ResetEngine(engine *core.SimulationEngine) {
+	s.engine = engine
+}
+
 // StartGrpcServer starts the gRPC server on the specified port
 func (s *GrpcServer) StartGrpcServer(port int) error {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
