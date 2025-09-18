@@ -52,16 +52,6 @@ Homepage = "https://github.com/jelech/rl_env_engine"
 Repository = "https://github.com/jelech/rl_env_engine"
 Issues = "https://github.com/jelech/rl_env_engine/issues"
 
-[tool.setuptools]
-packages = ["rl_env_engine_client"]
-
-[tool.setuptools.package-dir]
-rl_env_engine_client = "."
-
-[tool.setuptools.exclude-package-data]
-"*" = ["*.pyc", "__pycache__"]
-
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["rl_env_engine_client*", "simulation_pb2*", "simulation_pb2_grpc*"]
-exclude = ["*test*", "*examples*"]
+include = ["rl_env_engine_client*"]
