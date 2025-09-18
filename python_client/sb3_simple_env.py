@@ -8,7 +8,19 @@ import grpc
 import numpy as np
 import gymnasium as gym  # 新版本使用gymnasium
 from gymnasium import spaces
-from proto import simulation_pb2, simulation_pb2_grpc
+
+# 优先尝试包内相对导入（安装后）
+try:
+    from . import simulation_pb2, simulation_pb2_grpc  # type: ignore
+except Exception:  # pragma: no cover
+    # 回退：兼容直接在源码目录运行（未通过pip安装时）
+    try:
+        import simulation_pb2  # type: ignore
+        import simulation_pb2_grpc  # type: ignore
+    except ImportError as e:  # pragma: no cover
+        raise ImportError(
+            "Cannot import simulation_pb2. Generate it via protoc or ensure package is installed."  # noqa: E501
+        ) from e
 
 
 class SB3GrpcSimpleEnv(gym.Env):

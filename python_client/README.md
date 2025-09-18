@@ -1,5 +1,21 @@
 # Python Client for Simulation Framework
 
+> 可通过 pip 直接从 GitHub 安装：
+>
+> 基础安装：
+> ```bash
+> pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client"
+> ```
+> 带强化学习依赖 (extras: rl)：
+> ```bash
+> pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client&egg=rl-env-engine-client[rl]"
+> ```
+>
+> 安装后导入：
+> ```python
+> from rl_env_engine_client import SB3GrpcSimpleEnv, SimulationGrpcClient
+> ```
+
 这个目录包含了Python客户端，用于与Go仿真服务器进行交互，支持HTTP和gRPC两种方式，并提供了Stable Baselines 3 (SB3)集成。
 
 ## 文件说明
@@ -9,77 +25,45 @@
 - `grpc_client.py` - 基础gRPC客户端
 - `simulation_gym.py` - HTTP API的Gym接口（兼容）
 - `rl_training.py` - HTTP版强化学习训练示例
-- `test_api.py` - HTTP API测试脚本
-- `proto/` - 自动生成的protobuf Python文件
-- `requirements.txt` - Python依赖列表
+- `simulation_pb2.py` / `simulation_pb2_grpc.py` - 由 proto 生成的 gRPC 代码（已随包分发）
+- `requirements.txt` - 旧版依赖列表（现在使用 `pyproject.toml`）
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 安装依赖（若源码方式）
 
 ```bash
-pip install -r requirements.txt
+pip install -e ./python_client[rl]
+```
+
+或使用 Git 安装（推荐）：
+```bash
+pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client"
 ```
 
 ### 2. 启动Go服务器
 
 在项目根目录：
 ```bash
-# 启动gRPC服务器（推荐）
-make dev-grpc
-
-# 或启动HTTP服务器（兼容）
-make run-server
+make dev-grpc      # 启动gRPC服务器（推荐）
+# 或
+make run-server    # 启动HTTP服务器
 ```
 
 ### 3. SB3强化学习训练
 
 ```bash
-# 使用gRPC环境进行SB3训练
-python sb3_training.py
+python -m rl_env_engine_client.sb3_training
 ```
 
-## SB3环境使用
-
-### 基本使用
-
+或直接引用：
 ```python
-from sb3_simple_env import SB3GrpcSimpleEnv
+from rl_env_engine_client import SB3GrpcSimpleEnv
 from stable_baselines3 import PPO
 
-# 创建环境
 env = SB3GrpcSimpleEnv(max_steps=50, tolerance=0.2)
-
-# 训练模型
 model = PPO("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=50000)
-
-# 保存和测试
-model.save("my_model")
-env.close()
-```
-
-### 训练配置
-
-```python
-# 自定义环境参数
-env = SB3GrpcSimpleEnv(
-    host='127.0.0.1',           # 服务器地址
-    port=9090,                  # 服务器端口
-    max_steps=100,              # 最大步数
-    tolerance=0.1               # 容忍误差
-)
-
-# 自定义PPO参数
-model = PPO(
-    "MlpPolicy", 
-    env,
-    learning_rate=3e-4,
-    n_steps=2048,
-    batch_size=64,
-    verbose=1,
-    tensorboard_log="./logs/"
-)
+model.learn(total_timesteps=10_000)
 ```
 
 ## 环境说明
@@ -94,89 +78,31 @@ model = PPO(
 - `max_steps`: 最大步数（默认50）
 - `tolerance`: 容忍误差（默认0.5）
 
-## 兼容的算法
+## 安装问题排查
 
-- ✅ **PPO** (Proximal Policy Optimization) - 推荐
-- ✅ **A2C** (Advantage Actor-Critic) - 快速训练
-- ✅ **SAC** (Soft Actor-Critic) - 连续动作专家
-- ✅ **TD3** (Twin Delayed Deep Deterministic) - 高级算法
+| 问题                                  | 可能原因                      | 解决                                |
+| ------------------------------------- | ----------------------------- | ----------------------------------- |
+| `ModuleNotFoundError: simulation_pb2` | gRPC 代码未生成或包未正确安装 | 使用 pip Git 安装或确保文件存在     |
+| `grpcio` 编译失败                     | Python 版本或系统不兼容       | 升级 pip / 更换 Python 版本 (>=3.8) |
+| 训练卡住                              | 服务器未启动                  | 先运行 `make dev-grpc`              |
 
-## 监控训练
+## 旧有本地开发方式迁移说明
 
-### TensorBoard
+之前通过：
+```python
+sys.path.append('proto')
+```
+现在不需要；所有 protobuf 代码已包含在发布包中。
+
+## 后续计划建议
+- 发布到 PyPI (`rl-env-engine-client`)
+- 增加多场景支持自动发现
+- 增加异步客户端 (asyncio)
+- 增加批量 step 接口以减少 RPC 次数
+
+---
+如需调试：
 ```bash
-# 启动TensorBoard
-tensorboard --logdir ./logs/
-
-# 打开浏览器访问 http://localhost:6006
-```
-
-### 关键指标
-- `rollout/ep_rew_mean`: 平均episode奖励
-- `rollout/ep_len_mean`: 平均episode长度  
-- `train/learning_rate`: 学习率变化
-- `train/value_loss`: 价值函数损失
-
-## 故障排除
-
-### gRPC连接失败
-```bash
-# 检查服务器是否运行
-lsof -i :9090
-
-# 重启gRPC服务器
-make dev-grpc
-```
-
-### 训练不收敛
-```python
-# 尝试调整学习率
-model = PPO("MlpPolicy", env, learning_rate=1e-4)
-
-# 增加训练步数
-model.learn(total_timesteps=100000)
-
-# 调整网络结构
-model = PPO("MlpPolicy", env, policy_kwargs=dict(net_arch=[64, 64]))
-```
-
-### 环境检查失败
-```python
-# 验证环境
-from stable_baselines3.common.env_checker import check_env
-check_env(env)
-```
-
-## 性能对比
-
-| 接口类型 | 延迟 | 吞吐量 | 使用场景           |
-| -------- | ---- | ------ | ------------------ |
-| gRPC     | 低   | 高     | 高频训练、实时仿真 |
-| HTTP     | 中   | 中     | 调试、兼容性       |
-
-## 示例
-
-### 完整训练流程
-```python
-from sb3_simple_env import SB3GrpcSimpleEnv
-from stable_baselines3 import PPO
-from stable_baselines3.common.monitor import Monitor
-
-# 创建和包装环境
-env = SB3GrpcSimpleEnv(max_steps=30, tolerance=0.2)
-env = Monitor(env)
-
-# 训练
-model = PPO("MlpPolicy", env, verbose=1, tensorboard_log="./logs/")
-model.learn(total_timesteps=50000)
-
-# 测试
-obs, _ = env.reset()
-for _ in range(100):
-    action, _ = model.predict(obs, deterministic=True)
-    obs, reward, terminated, truncated, info = env.step(action)
-    if terminated or truncated:
-        obs, _ = env.reset()
-
-env.close()
+pip uninstall rl-env-engine-client -y
+pip install -e ./python_client
 ```

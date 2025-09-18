@@ -3,23 +3,18 @@
 gRPC客户端示例，用于与仿真服务器进行通信
 """
 import grpc
-from concurrent import futures
-import sys
-import os
 
-# 添加proto生成的代码到路径
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "proto"))
 
 try:
-    import simulation_pb2
-    import simulation_pb2_grpc
-except ImportError as e:
-    print(f"Error importing protobuf modules: {e}")
-    print("Please generate Python protobuf files first:")
-    print(
-        "cd .. && python -m grpc_tools.protoc --python_out=python_client --grpc_python_out=python_client -I proto proto/simulation.proto"
-    )
-    sys.exit(1)
+    from . import simulation_pb2, simulation_pb2_grpc  # type: ignore
+except Exception:  # pragma: no cover
+    try:
+        import simulation_pb2  # type: ignore
+        import simulation_pb2_grpc  # type: ignore
+    except ImportError as e:  # pragma: no cover
+        raise ImportError(
+            "Cannot import simulation_pb2. Generate it via protoc or ensure package is installed."  # noqa: E501
+        ) from e
 
 
 class SimulationGrpcClient:

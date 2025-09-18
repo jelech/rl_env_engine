@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rl-env-engine-client"
+version = "0.1.0"
+description = "Python gRPC client and SB3 gymnasium wrapper for rl_env_engine"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+authors = [
+  { name = "jelech" }
+]
+keywords = ["reinforcement-learning", "grpc", "gymnasium", "stable-baselines3", "rl"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+
+# 基础运行依赖（精简，避免重复冲突）
+dependencies = [
+  "numpy>=1.21.0",
+  "grpcio>=1.50.0",
+  "protobuf>=3.19.0",
+  "gymnasium>=0.28.0",
+]
+
+[project.optional-dependencies]
+# 完整RL训练需要的额外依赖
+rl = [
+  "stable-baselines3[extra]>=2.0.0",
+  "torch",  # 由pip根据平台选择合适版本
+  "tensorboard>=2.8.0",
+  "matplotlib>=3.5.0",
+  "pandas>=1.3.0",
+  "seaborn>=0.11.0"
+]
+
+dev = [
+  "black",
+  "isort",
+  "mypy",
+  "ruff",
+  "pytest"
+]
+
+[project.urls]
+Homepage = "https://github.com/jelech/rl_env_engine"
+Repository = "https://github.com/jelech/rl_env_engine"
+Issues = "https://github.com/jelech/rl_env_engine/issues"
+
+[tool.setuptools]
+packages = ["rl_env_engine_client"]
+
+[tool.setuptools.package-dir]
+rl_env_engine_client = "."
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.pyc", "__pycache__"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rl_env_engine_client*", "simulation_pb2*", "simulation_pb2_grpc*"]
+exclude = ["*test*", "*examples*"]
