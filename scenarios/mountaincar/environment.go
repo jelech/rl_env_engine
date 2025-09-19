@@ -188,6 +188,26 @@ func (e *MountainCarEnvironment) Close() error {
 	return e.BaseEnvironment.Close()
 }
 
+// GetSpaces 获取MountainCar场景的动作空间和观察空间定义
+func (e *MountainCarEnvironment) GetSpaces() core.SpaceDefinition {
+	return core.SpaceDefinition{
+		ActionSpace: core.ActionSpace{
+			Type:  core.SpaceTypeDiscrete,
+			Low:   []float64{0}, // 离散动作的最小值
+			High:  []float64{2}, // 离散动作的最大值 (0: 左, 1: 不动, 2: 右)
+			Shape: []int32{},
+			Dtype: "int32",
+		},
+		ObservationSpace: core.ObservationSpace{
+			Type:  core.SpaceTypeBox,
+			Low:   []float64{-1.2, -0.07}, // [position, velocity]
+			High:  []float64{0.6, 0.07},
+			Shape: []int32{2},
+			Dtype: "float32",
+		},
+	}
+}
+
 // MountainCarAction MountainCar专用动作
 type MountainCarAction struct {
 	Action int // 0: 向左, 1: 不动, 2: 向右

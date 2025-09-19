@@ -95,23 +95,3 @@ func (s *SimpleScenario) ValidateConfig(config core.Config) error {
 
 	return nil
 }
-
-// GetSpaces 获取简单场景的动作空间和观察空间定义
-func (s *SimpleScenario) GetSpaces() core.SpaceDefinition {
-	return core.SpaceDefinition{
-		ActionSpace: core.ActionSpace{
-			Type:  core.SpaceTypeBox,
-			Low:   []float64{-10.0},
-			High:  []float64{10.0},
-			Shape: []int32{1},
-			Dtype: "float32",
-		},
-		ObservationSpace: core.ObservationSpace{
-			Type:  core.SpaceTypeBox,
-			Low:   []float64{-1000000, -1000000, 0, 0, 0, -1000000}, // [current, target, step, max_steps, tolerance, reward]
-			High:  []float64{1000000, 1000000, 1000000, 1000000, 1000000, 1000000},
-			Shape: []int32{6},
-			Dtype: "float32",
-		},
-	}
-}

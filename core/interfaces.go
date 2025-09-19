@@ -31,6 +31,9 @@ type Environment interface {
 	// GetInfo 获取环境信息
 	GetInfo() map[string]interface{}
 
+	// GetSpaces 获取环境的动作空间和观察空间定义
+	GetSpaces() SpaceDefinition
+
 	// Close 关闭环境
 	Close() error
 }
@@ -48,9 +51,6 @@ type Scenario interface {
 
 	// ValidateConfig 验证配置
 	ValidateConfig(config Config) error
-
-	// GetSpaces 获取场景的动作空间和观察空间定义
-	GetSpaces() SpaceDefinition
 }
 
 // Config 定义配置接口

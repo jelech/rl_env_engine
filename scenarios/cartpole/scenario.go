@@ -58,23 +58,3 @@ func (s *CartPoleScenario) ValidateConfig(config core.Config) error {
 
 	return nil
 }
-
-// GetSpaces 获取CartPole场景的动作空间和观察空间定义
-func (s *CartPoleScenario) GetSpaces() core.SpaceDefinition {
-	return core.SpaceDefinition{
-		ActionSpace: core.ActionSpace{
-			Type:  core.SpaceTypeDiscrete,
-			Low:   []float64{0}, // 离散动作的最小值
-			High:  []float64{1}, // 离散动作的最大值 (0: 左, 1: 右)
-			Shape: []int32{},
-			Dtype: "int32",
-		},
-		ObservationSpace: core.ObservationSpace{
-			Type:  core.SpaceTypeBox,
-			Low:   []float64{-4.8, -1e6, -0.42, -1e6}, // [x, x_dot, theta, theta_dot]
-			High:  []float64{4.8, 1e6, 0.42, 1e6},
-			Shape: []int32{4},
-			Dtype: "float32",
-		},
-	}
-}

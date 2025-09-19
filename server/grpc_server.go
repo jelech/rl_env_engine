@@ -251,22 +251,22 @@ func (s *GrpcServer) StreamStep(stream pb.SimulationService_StreamStepServer) er
 
 // GetSpaces 获取指定场景的动作空间和观察空间定义
 func (s *GrpcServer) GetSpaces(ctx context.Context, req *pb.GetSpacesRequest) (*pb.GetSpacesResponse, error) {
-	// 获取场景
-	scenario, err := s.engine.GetScenario(req.Scenario)
-	if err != nil {
-		return nil, fmt.Errorf("scenario '%s' not found: %w", req.Scenario, err)
+	env, ok := s.environments[req.EnvId]
+	if !ok {
+		return nil, fmt.Errorf("environment %s not found", req.EnvId)
 	}
 
 	// 获取空间定义
-	spacesDef := scenario.GetSpaces()
+	spacesDef := env.GetSpaces()
 
 	// 转换为protobuf格式
 	actionSpace := &pb.ActionSpace{
-		Type:  pb.SpaceType(spacesDef.ActionSpace.Type),
-		Low:   spacesDef.ActionSpace.Low,
-		High:  spacesDef.ActionSpace.High,
-		Shape: spacesDef.ActionSpace.Shape,
-		Dtype: spacesDef.ActionSpace.Dtype,
+		Type:           pb.SpaceType(spacesDef.ActionSpace.Type),
+		Low:            spacesDef.ActionSpace.Low,
+		High:           spacesDef.ActionSpace.High,
+		Shape:          spacesDef.ActionSpace.Shape,
+		Dtype:          spacesDef.ActionSpace.Dtype,
+		DiscreteValues: spacesDef.ActionSpace.DiscreteValues,
 	}
 
 	observationSpace := &pb.ObservationSpace{

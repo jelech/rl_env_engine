@@ -259,6 +259,26 @@ func (e *LunarLanderEnvironment) Close() error {
 	return e.BaseEnvironment.Close()
 }
 
+// GetSpaces 获取LunarLander场景的动作空间和观察空间定义
+func (e *LunarLanderEnvironment) GetSpaces() core.SpaceDefinition {
+	return core.SpaceDefinition{
+		ActionSpace: core.ActionSpace{
+			Type:  core.SpaceTypeDiscrete,
+			Low:   []float64{0}, // 离散动作的最小值
+			High:  []float64{3}, // 离散动作的最大值 (0: noop, 1: left, 2: main, 3: right)
+			Shape: []int32{},
+			Dtype: "int32",
+		},
+		ObservationSpace: core.ObservationSpace{
+			Type:  core.SpaceTypeBox,
+			Low:   []float64{-1.5, -5.0, -5.0, -5.0, -3.14159, -5.0, 0.0, 0.0}, // [x, y, vel_x, vel_y, angle, angular_vel, left_leg, right_leg]
+			High:  []float64{1.5, 5.0, 5.0, 5.0, 3.14159, 5.0, 1.0, 1.0},
+			Shape: []int32{8},
+			Dtype: "float32",
+		},
+	}
+}
+
 // LunarLanderAction LunarLander专用动作
 type LunarLanderAction struct {
 	Action int // 0: 不动, 1: 左引擎, 2: 主引擎, 3: 右引擎

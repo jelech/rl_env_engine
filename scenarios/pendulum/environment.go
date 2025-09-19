@@ -174,6 +174,26 @@ func (e *PendulumEnvironment) Close() error {
 	return e.BaseEnvironment.Close()
 }
 
+// GetSpaces 获取Pendulum场景的动作空间和观察空间定义
+func (e *PendulumEnvironment) GetSpaces() core.SpaceDefinition {
+	return core.SpaceDefinition{
+		ActionSpace: core.ActionSpace{
+			Type:  core.SpaceTypeBox,
+			Low:   []float64{-2.0}, // 扭矩范围
+			High:  []float64{2.0},
+			Shape: []int32{1},
+			Dtype: "float32",
+		},
+		ObservationSpace: core.ObservationSpace{
+			Type:  core.SpaceTypeBox,
+			Low:   []float64{-1.0, -1.0, -8.0}, // [cos(theta), sin(theta), theta_dot]
+			High:  []float64{1.0, 1.0, 8.0},
+			Shape: []int32{3},
+			Dtype: "float32",
+		},
+	}
+}
+
 // angleNormalize 将角度规范化到 [-π, π]
 func angleNormalize(x float64) float64 {
 	return math.Mod(x+math.Pi, 2*math.Pi) - math.Pi

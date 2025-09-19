@@ -124,8 +124,25 @@ func (e *SimpleEnvironment) Step(ctx context.Context, actions []core.Action) ([]
 
 // GetObservations 获取当前观察
 func (e *SimpleEnvironment) GetObservations() []core.Observation {
-	obs := NewSimpleObservation(e.currentValue, e.targetValue, float64(e.currentStep), float64(e.maxSteps))
-	return []core.Observation{obs}
+	data := []float64{
+		e.currentValue,
+		e.targetValue,
+		e.targetValue - e.currentValue, // 距离目标的差值
+		float64(e.currentStep),
+		float64(e.maxSteps),
+		float64(e.currentStep) / float64(e.maxSteps), // 进度比例
+	}
+
+	metadata := map[string]interface{}{
+		"current_value": e.currentValue,
+		"target_value":  e.targetValue,
+		"current_step":  e.currentStep,
+		"max_steps":     e.maxSteps,
+		"distance":      math.Abs(e.currentValue - e.targetValue),
+	}
+
+	baseObs := core.NewBaseObservation(data, metadata)
+	return []core.Observation{baseObs}
 }
 
 // GetReward 计算当前奖励
@@ -138,33 +155,23 @@ func (e *SimpleEnvironment) GetReward() []float64 {
 	return []float64{reward}
 }
 
-// SimpleObservation 简单观察实现
-type SimpleObservation struct {
-	*core.BaseObservation
-}
-
-// NewSimpleObservation 创建新的简单观察
-func NewSimpleObservation(currentValue, targetValue, currentStep, maxSteps float64) *SimpleObservation {
-	data := []float64{
-		currentValue,
-		targetValue,
-		targetValue - currentValue, // 距离目标的差值
-		currentStep,
-		maxSteps,
-		currentStep / maxSteps, // 进度比例
-	}
-
-	metadata := map[string]interface{}{
-		"current_value": currentValue,
-		"target_value":  targetValue,
-		"current_step":  currentStep,
-		"max_steps":     maxSteps,
-		"distance":      math.Abs(currentValue - targetValue),
-	}
-
-	baseObs := core.NewBaseObservation(data, metadata)
-	return &SimpleObservation{
-		BaseObservation: baseObs,
+// GetSpaces 获取简单场景的动作空间和观察空间定义
+func (s *SimpleEnvironment) GetSpaces() core.SpaceDefinition {
+	return core.SpaceDefinition{
+		ActionSpace: core.ActionSpace{
+			Type:  core.SpaceTypeBox,
+			Low:   []float64{-10.0},
+			High:  []float64{10.0},
+			Shape: []int32{1},
+			Dtype: "float32",
+		},
+		ObservationSpace: core.ObservationSpace{
+			Type:  core.SpaceTypeBox,
+			Low:   []float64{-1000000, -1000000, 0, 0, 0, -1000000}, // [current, target, step, max_steps, tolerance, reward]
+			High:  []float64{1000000, 1000000, 1000000, 1000000, 1000000, 1000000},
+			Shape: []int32{6},
+			Dtype: "float32",
+		},
 	}
 }
 

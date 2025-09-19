@@ -122,7 +122,7 @@ message BoolArray {
 
 // 空间定义相关消息
 message GetSpacesRequest {
-  string scenario = 1;  // 指定场景类型
+  string env_id = 1;   // 指定特定env, 由于可以通过config配置设置action space
 }
 
 message GetSpacesResponse {
@@ -132,10 +132,19 @@ message GetSpacesResponse {
 
 message ActionSpace {
   SpaceType type = 1;
-  repeated double low = 2;   // 最小值
-  repeated double high = 3;  // 最大值
-  repeated int32 shape = 4;  // 形状
-  string dtype = 5;          // 数据类型
+  repeated double low = 2;   // 最小值 (每维度一个值)
+  repeated double high = 3;  // 最大值 (每维度一个值)
+  repeated int32 shape = 4;  // 形状: [action_dimensions] 
+                             // Discrete: [] (标量)
+                             // Box: [action_dim] 
+                             // MultiDiscrete: [num_discrete_groups]
+                             // MultiBinary: [num_binary_actions]
+  string dtype = 5;          // 数据类型: "int32", "float32", etc.
+  
+  // 支持离散浮点值
+  repeated double discrete_values = 6; // 当type=DISCRETE时，可选的具体离散值列表
+                                       // 例如: [1.0, 1.1, 1.5, 2.0, 2.5]
+                                       // 如果为空，则使用标准的[0, 1, 2, ..., high]
 }
 
 message ObservationSpace {
@@ -147,8 +156,10 @@ message ObservationSpace {
 }
 
 enum SpaceType {
-  BOX = 0;        // 连续空间 (gym.spaces.Box)
-  DISCRETE = 1;   // 离散空间 (gym.spaces.Discrete)
-  MULTI_DISCRETE = 2; // 多离散空间
-  MULTI_BINARY = 3;   // 多二进制空间
+  BOX = 0;            // 连续空间 (gym.spaces.Box) - shape=[dims], 每维有low/high
+  DISCRETE = 1;       // 离散空间 (gym.spaces.Discrete) - shape=[], high=[n-1]表示n个动作
+                      // 如果discrete_values非空，则动作值来自该列表
+  MULTI_DISCRETE = 2; // 多离散空间 - shape=[groups], high=[n1-1,n2-1,...]每组动作数
+  MULTI_BINARY = 3;   // 多二进制空间 - shape=[bits], low/high全为[0]/[1]
+  DISCRETE_FLOAT = 4; // 离散浮点空间 - 预定义的浮点值列表，使用discrete_values字段
 }
