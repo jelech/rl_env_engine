@@ -1,82 +1,170 @@
-# Python Client for Simulation Framework
+# gRPC 强化学习环境客户端
 
-> 可通过 pip 直接从 GitHub 安装：
+通用的 gRPC 环境包装器，为仿真引擎提供标准化的强化学习环境接口。
+
+> 📦 **本地安装（推荐）**
 >
 > 基础安装：
 > ```bash
-> pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client"
+> pip install -e python_client
 > ```
-> 带强化学习依赖 (extras: rl)：
+> 带强化学习依赖：
 > ```bash
-> pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client&egg=rl-env-engine-client[rl]"
+> pip install -e "python_client[rl]"
 > ```
 >
 > 安装后导入：
 > ```python
-> from rl_env_engine_client import SB3GrpcSimpleEnv, SimulationGrpcClient
+> from rl_env_engine_client import GrpcEnv, SimulationGrpcClient
 > ```
 
-这个目录包含了Python客户端，用于与Go仿真服务器进行交互，支持HTTP和gRPC两种方式，并提供了Stable Baselines 3 (SB3)集成。
+这个包提供了通用的 gRPC 环境包装器，可连接任意仿真服务器，支持自动空间发现和多种动作类型。
+
+## 功能特性
+
+- **通用性**: 支持任意 gRPC 仿真服务和场景类型
+- **自动空间发现**: 从服务器自动获取动作空间和观察空间定义
+- **多种动作类型**: 支持数值、数组、布尔等多种动作数据类型
+- **标准接口**: 兼容 Gymnasium 标准，可与主流强化学习库集成
+- **灵活配置**: 支持自定义服务器地址、端口和场景配置
 
 ## 文件说明
 
-- `sb3_simple_env.py` - SB3兼容的gRPC环境包装器（⭐ 推荐）
-- `sb3_training.py` - 完整的SB3训练示例
+- `grpc_env.py` - 通用gRPC环境包装器（⭐ 推荐）
 - `grpc_client.py` - 基础gRPC客户端
-- `simulation_gym.py` - HTTP API的Gym接口（兼容）
-- `rl_training.py` - HTTP版强化学习训练示例
 - `simulation_pb2.py` / `simulation_pb2_grpc.py` - 由 proto 生成的 gRPC 代码（已随包分发）
-- `requirements.txt` - 旧版依赖列表（现在使用 `pyproject.toml`）
+- `examples/` - 示例代码和测试脚本
 
 ## 快速开始
 
-### 1. 安装依赖（若源码方式）
+### 1. 安装依赖
 
 ```bash
-pip install -e ./python_client[rl]
+pip install -e python_client[rl]
 ```
 
-或使用 Git 安装（推荐）：
-```bash
-pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client"
-```
-
-### 2. 启动Go服务器
+### 2. 启动gRPC服务器
 
 在项目根目录：
 ```bash
 make dev-grpc      # 启动gRPC服务器（推荐）
-# 或
-make run-server    # 启动HTTP服务器
 ```
 
-### 3. SB3强化学习训练
+### 3. 基本使用
 
-```bash
-python -m rl_env_engine_client.sb3_training
-```
-
-或直接引用：
 ```python
-from rl_env_engine_client import SB3GrpcSimpleEnv
+from rl_env_engine_client import GrpcEnv
+
+# 创建环境连接
+env = GrpcEnv(
+    scenario="your_scenario",
+    host="127.0.0.1", 
+    port=9090,
+    config={"max_steps": 100, "param1": "value1"}
+)
+
+# 标准 Gymnasium 接口
+obs, info = env.reset()
+action = env.action_space.sample()
+obs, reward, terminated, truncated, info = env.step(action)
+
+# 关闭环境
+env.close()
+```
+
+### 4. 与强化学习库集成
+
+```python
+from rl_env_engine_client import GrpcEnv
 from stable_baselines3 import PPO
 
-env = SB3GrpcSimpleEnv(max_steps=50, tolerance=0.2)
+# 创建环境
+env = GrpcEnv(scenario="training_scenario", config={"max_steps": 200})
+
+# 使用 Stable Baselines 3 训练
 model = PPO("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=10_000)
+model.learn(total_timesteps=10000)
+
+# 评估模型
+obs, _ = env.reset()
+for i in range(1000):
+    action, _states = model.predict(obs)
+    obs, reward, terminated, truncated, info = env.step(action)
+    if terminated or truncated:
+        obs, _ = env.reset()
 ```
 
-## 环境说明
+## API 文档
 
-### Simple Environment
-- **目标**: 让 `current_value` 接近 `target_value`
-- **观察空间**: `[current_value, target_value, step, max_steps, tolerance, reward]` (6维)
-- **动作空间**: 连续值 `[-10, 10]` (1维)
-- **奖励函数**: 距离越近奖励越高，到达目标获得额外奖励
+### GrpcEnv 类
 
-### 配置参数
-- `max_steps`: 最大步数（默认50）
-- `tolerance`: 容忍误差（默认0.5）
+主要的通用 gRPC 环境包装器。
+
+#### 初始化参数
+
+- `scenario` (str): 服务器端的场景名称
+- `host` (str, 可选): gRPC 服务器地址，默认 "127.0.0.1"
+- `port` (int, 可选): gRPC 服务器端口，默认 9090
+- `env_id` (str, 可选): 环境实例ID，默认自动生成
+- `config` (Dict[str, Any], 可选): 传递给服务器的配置参数
+- `auto_reset` (bool, 可选): 是否自动重置环境，默认 True
+
+#### 主要方法
+
+- `reset()`: 重置环境，返回初始观察和信息
+- `step(action)`: 执行动作，返回新观察、奖励、终止状态、截断状态和信息
+- `close()`: 关闭环境连接
+- `get_available_scenarios()`: 获取服务器支持的场景列表
+
+### 动作类型支持
+
+环境支持多种动作类型的自动转换：
+
+- **浮点数**: `1.5`
+- **整数**: `42`
+- **布尔值**: `True`/`False`
+- **NumPy 数组**: `np.array([1.0, 2.0, 3.0])`
+- **多维数组**: `np.array([[1, 2], [3, 4]])`
+
+## 空间定义
+
+环境自动从服务器获取动作空间和观察空间定义，支持：
+
+- **Box**: 连续空间
+- **Discrete**: 离散空间  
+- **MultiDiscrete**: 多离散空间
+- **MultiBinary**: 多二进制空间
+
+## 配置示例
+
+```python
+# 基本配置
+config = {
+    "max_steps": 100,
+    "learning_rate": 0.01,
+    "difficulty": "medium"
+}
+
+# 高级配置
+config = {
+    "environment": {
+        "physics": {
+            "gravity": 9.8,
+            "friction": 0.1
+        },
+        "rendering": {
+            "width": 800,
+            "height": 600
+        }
+    },
+    "training": {
+        "max_episodes": 1000,
+        "early_stopping": True
+    }
+}
+
+env = GrpcEnv(scenario="complex_sim", config=config)
+```
 
 ## 安装问题排查
 

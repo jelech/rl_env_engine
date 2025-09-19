@@ -1,24 +1,28 @@
 """rl_env_engine_client
 
-Python gRPC client + SB3 gymnasium wrapper for the Go rl_env_engine project.
+通用gRPC环境客户端包，为仿真引擎提供标准化的强化学习环境接口。
 
-Install (from repo root):
-    pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client"
+本地安装（从仓库根目录）:
+    pip install -e python_client
 
-With RL extras:
-    pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client&egg=rl-env-engine-client[rl]"
+或安装RL扩展依赖:
+    pip install -e "python_client[rl]"
 
-After installation:
-    from rl_env_engine_client.sb3_simple_env import SB3GrpcSimpleEnv
+使用示例:
+    from rl_env_engine_client.grpc_env import GrpcEnv
 """
 
 __all__ = [
-    "SB3GrpcSimpleEnv",
+    "GrpcEnv",
+    "SimpleEnv",
     "SimulationGrpcClient",
 ]
 
 __version__ = "0.1.0"
 
 # 重新导出核心类
-from .sb3_simple_env import SB3GrpcSimpleEnv  # noqa: E402
+from .grpc_env import GrpcEnv, SimpleEnv  # noqa: E402
 from .grpc_client import SimulationGrpcClient  # noqa: E402
+
+# 主要导出通用环境类
+__all__ = ["GrpcEnv", "SimpleEnv", "SimulationGrpcClient"]

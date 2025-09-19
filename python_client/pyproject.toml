@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rl-env-engine-client"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python gRPC client and SB3 gymnasium wrapper for rl_env_engine"
 readme = "README.md"
 license = { text = "MIT" }
