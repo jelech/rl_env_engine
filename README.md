@@ -1,22 +1,69 @@
 # RL Env Engine
 
-一个面向强化学习（RL）的高性能 Go 仿真框架，支持多场景、多环境并发训练，提供 gRPC 与 HTTP 两套 API，并内置 Python/SB3 集成能力。
+一个面向强化学习（RL）的高性能仿真框架，支持多场景、多环境并发训练，提供 gRPC 与 HTTP 两套 API，并内置 Python 环境包装器。
 
 ## 特性总览
-- 多场景支持：内置 Simple 场景，便于算法验证与原型开发
+- 多场景支持：可扩展的场景架构，便于算法验证与原型开发
 - 双 API：gRPC（高性能）与 HTTP（调试友好）
-- Python 生态：SB3 环境包装器，开箱即用
+- Python 生态：通用环境包装器，开箱即用
 - 插件式扩展：实现并注册 Scenario 即可新增场景
-- 监控友好：TensorBoard 日志与详细日志开关
+- 监控友好：内置性能监控与详细日志开关
 - 生产可用：支持多环境并发、资源自动回收、批量操作
 
 ## 前置条件
 - Go 1.20+（推荐 1.21+）
-- Python 3.9+（SB3 需 3.8–3.11 区间）
+- Python 3.9+（强化学习库推荐 3.8–3.11 区间）
 - protoc 与 protoc-gen-go（用于生成 gRPC 代码）
 - Make 与基本构建工具链
 
+## 安装
+
+### Go 模块安装
+```bash
+# 在你的Go项目中引入rl_env_engine
+go get github.com/jelech/rl_env_engine
+
+# 或者克隆仓库进行开发
+git clone https://github.com/jelech/rl_env_engine.git
+cd rl_env_engine
+go mod tidy
+```
+
+### Python 客户端安装
+
+#### 方式一：本地开发安装（推荐）
+```bash
+git clone https://github.com/jelech/rl_env_engine.git
+cd rl_env_engine/python_client
+
+# 基础安装
+pip install -e .
+
+# 安装强化学习相关依赖
+pip install -e ".[rl]"
+```
+
+#### 方式二：直接从 GitHub 安装
+```bash
+# 基础安装
+pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client"
+
+# 安装强化学习相关依赖
+pip install "git+https://github.com/jelech/rl_env_engine.git#subdirectory=python_client&egg=rl-env-engine-client[rl]"
+```
+
+#### 验证安装
+```bash
+# 验证Go安装
+go run examples/dual_server/main.go
+
+# 验证Python安装
+python -c "from rl_env_engine_client import GrpcEnv; print('安装成功！')"
+```
+
 ## 快速开始
+
+> 💡 **提示**：请先完成上述[安装](#安装)步骤
 
 ### 1) 启动 gRPC 服务器（推荐）
 ```bash
@@ -24,11 +71,14 @@ make dev-grpc
 # 默认监听: 127.0.0.1:9090
 ```
 
-### 2) 使用 Python + SB3 训练
+### 2) 使用 Python 环境包装器
 ```bash
+# 如果已完成本地安装
+python -c "from rl_env_engine_client import GrpcEnv; print('Ready to use!')"
+
+# 或者运行完整示例
 cd python_client
-pip install -r requirements.txt
-python sb3_training.py
+python -m rl_env_engine_client.grpc_env
 ```
 
 ### 3) 启动 HTTP 服务器（可选，便于调试）
@@ -41,6 +91,7 @@ make run-server
 
 ### gRPC
 - GetInfo() — 获取服务信息
+- GetSpaces() — 获取动作空间和观察空间定义
 - CreateEnvironment() — 创建环境
 - ResetEnvironment() — 重置环境
 - StepEnvironment() — 执行一步
@@ -59,13 +110,13 @@ make run-server
 
 ## Python 集成
 
-### SB3 环境包装器（推荐）
+### 通用环境包装器（推荐）
 ```python
-from sb3_simple_env import SB3GrpcSimpleEnv
+from rl_env_engine_client import GrpcEnv
 from stable_baselines3 import PPO
 
 # 连接 gRPC 服务
-env = SB3GrpcSimpleEnv(max_steps=50, tolerance=0.2)
+env = GrpcEnv(scenario="training_scenario", config={"max_steps": 50, "tolerance": 0.2})
 
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=50000)
@@ -77,7 +128,7 @@ env.close()
 ### 基础 gRPC 客户端示例
 ```python
 import grpc
-from proto import simulation_pb2, simulation_pb2_grpc
+from rl_env_engine_client import simulation_pb2, simulation_pb2_grpc
 
 channel = grpc.insecure_channel("127.0.0.1:9090")
 client = simulation_pb2_grpc.SimulationServiceStub(channel)
@@ -85,7 +136,7 @@ client = simulation_pb2_grpc.SimulationServiceStub(channel)
 resp = client.CreateEnvironment(
     simulation_pb2.CreateEnvironmentRequest(
         env_id="test_env",
-        scenario="simple",
+        scenario="default",
         config={"max_steps": "50", "tolerance": "0.5"},
     )
 )
@@ -143,11 +194,11 @@ func main() {
 
     actionFunc := func(obs []simulations.Observation) []simulations.Action {
         return []simulations.Action{
-            simulations.NewSimpleAction(map[string]float32{"a": 1.0, "b": 0.9}),
+            simulations.NewAction(map[string]float32{"a": 1.0, "b": 0.9}),
         }
     }
 
-    if err := simulations.RunSimulation("simple", config, 10, actionFunc); err != nil {
+    if err := simulations.RunSimulation("default", config, 10, actionFunc); err != nil {
         panic(err)
     }
 }
@@ -158,16 +209,16 @@ func main() {
 .
 ├── core/                   # 核心仿真引擎
 ├── scenarios/              # 仿真场景实现
-│   └── simple/             # 简单场景
 ├── server/                 # 服务器实现
 │   ├── grpc_server.go      # gRPC 服务
 │   └── gym_api.go          # HTTP API
 ├── proto/                  # protobuf 定义
 ├── examples/               # 示例程序
 ├── python_client/          # Python 客户端
-│   ├── sb3_simple_env.py   # SB3 环境包装器
-│   ├── sb3_training.py     # SB3 训练示例
-│   └── requirements.txt    # 依赖
+│   ├── rl_env_engine_client/   # 客户端包
+│   │   ├── grpc_env.py     # 通用环境包装器
+│   │   └── grpc_client.py  # gRPC 客户端
+│   └── examples/           # 示例代码
 └── Makefile                # 构建脚本
 ```
 
@@ -190,10 +241,7 @@ make dev-setup
 # 生成 Python protobuf
 make proto-python
 
-# Python：安装 SB3 相关依赖
-make python-sb3
-
-# 运行 Go 测试
+# 运行测试
 make test
 
 # Python 端到端测试（HTTP）
@@ -234,11 +282,8 @@ func registerBuiltinScenarios(engine *core.SimulationEngine) {
 - gRPC 比 HTTP 通常快 30–50%
 - 支持多环境并发训练，注意 CPU/内存配比
 - 支持批量环境操作与资源自动回收
-- TensorBoard
-  ```bash
-  tensorboard --logdir ./ppo_simple_tensorboard/
-  ```
-- 日志
+- 内置监控指标：QPS、延迟、P50/P95/P99 等
+- 日志监控
   ```bash
   tail -f grpc_server.log
   DEBUG=1 make dev-grpc
@@ -246,18 +291,18 @@ func registerBuiltinScenarios(engine *core.SimulationEngine) {
 
 ## 示例与演示
 
-- 运行简单示例
+- 运行示例
   ```bash
-  go run examples/simple/main.go
+  go run examples/dual_server/main.go
   ```
 - 启动 HTTP 服务示例
   ```bash
-  go run examples/http_server/main.go --port 8080
+  go run examples/server/main.go --port 8080
   ```
-- 测试 Python 客户端（需先启动 HTTP 服务）
+- 测试 Python 客户端（需先启动服务）
   ```bash
   cd python_client
-  python test_api.py
+  python -m rl_env_engine_client.grpc_env
   ```
 
 ## 贡献

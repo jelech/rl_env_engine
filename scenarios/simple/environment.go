@@ -99,11 +99,6 @@ func (e *SimpleEnvironment) Step(ctx context.Context, actions []core.Action) ([]
 		return nil, nil, nil, fmt.Errorf("invalid action type: %T", actions[0])
 	}
 
-	// 验证action值的范围
-	if math.Abs(actionValue) > 5.0 {
-		return nil, nil, nil, fmt.Errorf("action value %f is out of range [-5.0, 5.0]", actionValue)
-	}
-
 	// 应用action：简单地将action值添加到当前值
 	e.currentValue += actionValue
 	e.currentStep++
@@ -192,9 +187,5 @@ func (a *SimpleAction) GetData() interface{} {
 
 // Validate 验证行动
 func (a *SimpleAction) Validate() error {
-	// 限制action的范围，避免过大的变化
-	if math.Abs(a.Value) > 5.0 {
-		return fmt.Errorf("action value %f is out of range [-5.0, 5.0]", a.Value)
-	}
 	return nil
 }

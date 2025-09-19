@@ -13,6 +13,8 @@ type SimpleScenario struct {
 	description string
 }
 
+var _ core.Scenario = (*SimpleScenario)(nil)
+
 // NewSimpleScenario 创建新的简单场景
 func NewSimpleScenario() *SimpleScenario {
 	return &SimpleScenario{
