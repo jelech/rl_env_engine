@@ -82,18 +82,30 @@ func (e *SimpleEnvironment) Step(ctx context.Context, actions []core.Action) ([]
 		return nil, nil, nil, fmt.Errorf("no actions provided")
 	}
 
-	// 转换action
-	simpleAction, ok := actions[0].(*SimpleAction)
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("invalid action type, expected *SimpleAction")
+	// 从GenericAction中提取数值
+	var actionValue float64
+
+	// 首先尝试使用GenericAction
+	if genericAction, ok := actions[0].(*core.GenericAction); ok {
+		var err error
+		actionValue, err = genericAction.GetFloat64()
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to extract float64 from generic action: %w", err)
+		}
+	} else if simpleAction, ok := actions[0].(*SimpleAction); ok {
+		// 兼容旧的SimpleAction
+		actionValue = simpleAction.Value
+	} else {
+		return nil, nil, nil, fmt.Errorf("invalid action type: %T", actions[0])
 	}
 
-	if err := simpleAction.Validate(); err != nil {
-		return nil, nil, nil, fmt.Errorf("action validation failed: %w", err)
+	// 验证action值的范围
+	if math.Abs(actionValue) > 5.0 {
+		return nil, nil, nil, fmt.Errorf("action value %f is out of range [-5.0, 5.0]", actionValue)
 	}
 
 	// 应用action：简单地将action值添加到当前值
-	e.currentValue += simpleAction.Value
+	e.currentValue += actionValue
 	e.currentStep++
 
 	// 计算奖励：距离目标值越近奖励越高

@@ -21,6 +21,9 @@ service SimulationService {
   // CloseEnvironment 关闭环境
   rpc CloseEnvironment(CloseEnvironmentRequest) returns (CloseEnvironmentResponse);
   
+  // GetSpaces 获取环境的动作空间和观察空间定义
+  rpc GetSpaces(GetSpacesRequest) returns (GetSpacesResponse);
+  
   // StreamStep 流式执行仿真步骤 (可选，用于实时仿真)
   rpc StreamStep(stream StepEnvironmentRequest) returns (stream StepEnvironmentResponse);
 }
@@ -84,13 +87,68 @@ message Observation {
 }
 
 message Action {
-  // 支持多种action类型，使用oneof
-  oneof action_type {
-    SimpleAction simple_action = 1;
-    // 可以在这里添加其他action类型
+  // 通用的action数据，支持多种类型
+  oneof data {
+    // 单个数值（最常见）
+    double float_value = 1;
+    int64 int_value = 2;
+    bool bool_value = 3;
+    
+    // 数组类型
+    FloatArray float_array = 4;
+    IntArray int_array = 5;
+    BoolArray bool_array = 6;
+    
+    // 字符串类型（用于离散动作）
+    string string_value = 7;
+    
+    // 原始字节数据（用于复杂自定义类型）
+    bytes raw_data = 8;
   }
 }
 
-message SimpleAction {
-  double value = 1;
+// 辅助消息类型
+message FloatArray {
+  repeated double values = 1;
+}
+
+message IntArray {
+  repeated int64 values = 1;
+}
+
+message BoolArray {
+  repeated bool values = 1;
+}
+
+// 空间定义相关消息
+message GetSpacesRequest {
+  string scenario = 1;  // 指定场景类型
+}
+
+message GetSpacesResponse {
+  ActionSpace action_space = 1;
+  ObservationSpace observation_space = 2;
+}
+
+message ActionSpace {
+  SpaceType type = 1;
+  repeated double low = 2;   // 最小值
+  repeated double high = 3;  // 最大值
+  repeated int32 shape = 4;  // 形状
+  string dtype = 5;          // 数据类型
+}
+
+message ObservationSpace {
+  SpaceType type = 1;
+  repeated double low = 2;   // 最小值
+  repeated double high = 3;  // 最大值
+  repeated int32 shape = 4;  // 形状
+  string dtype = 5;          // 数据类型
+}
+
+enum SpaceType {
+  BOX = 0;        // 连续空间 (gym.spaces.Box)
+  DISCRETE = 1;   // 离散空间 (gym.spaces.Discrete)
+  MULTI_DISCRETE = 2; // 多离散空间
+  MULTI_BINARY = 3;   // 多二进制空间
 }

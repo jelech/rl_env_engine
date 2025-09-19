@@ -49,15 +49,11 @@ class SB3GrpcSimpleEnv(gym.Env):
         self.client = None
         self._env_created = False
 
-        # 定义动作和观察空间
-        # 动作空间：连续值范围 [-10, 10]
-        self.action_space = spaces.Box(low=-10.0, high=10.0, shape=(1,), dtype=np.float32)
-
-        # 观察空间：[current_value, target_value, step, max_steps, tolerance, reward]
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32)
-
         # 连接到服务器
         self._connect()
+
+        # 获取空间定义
+        self._setup_spaces()
 
     def _connect(self):
         """连接到gRPC服务器"""
@@ -72,6 +68,42 @@ class SB3GrpcSimpleEnv(gym.Env):
 
         except Exception as e:
             raise ConnectionError(f"Failed to connect to gRPC server: {e}")
+
+    def _setup_spaces(self):
+        """获取并设置action_space和observation_space"""
+        try:
+            # 获取空间定义
+            request = simulation_pb2.GetSpacesRequest(scenario="simple")
+            response = self.client.GetSpaces(request)
+
+            # 设置action space
+            action_space_proto = response.action_space
+            if action_space_proto.type == 0:  # BOX type
+                self.action_space = spaces.Box(
+                    low=np.array(action_space_proto.low, dtype=np.float32),
+                    high=np.array(action_space_proto.high, dtype=np.float32),
+                    shape=tuple(action_space_proto.shape),
+                    dtype=np.float32,
+                )
+
+            # 设置observation space
+            obs_space_proto = response.observation_space
+            if obs_space_proto.type == 0:  # BOX type
+                self.observation_space = spaces.Box(
+                    low=np.array(obs_space_proto.low, dtype=np.float32),
+                    high=np.array(obs_space_proto.high, dtype=np.float32),
+                    shape=tuple(obs_space_proto.shape),
+                    dtype=np.float32,
+                )
+
+            print(f"Action space: {self.action_space}")
+            print(f"Observation space: {self.observation_space}")
+
+        except Exception as e:
+            print(f"Warning: Could not get spaces from server, using defaults: {e}")
+            # 回退到默认定义
+            self.action_space = spaces.Box(low=-10.0, high=10.0, shape=(1,), dtype=np.float32)
+            self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32)
 
     def _create_environment(self):
         """创建环境（如果尚未创建）"""
@@ -122,9 +154,8 @@ class SB3GrpcSimpleEnv(gym.Env):
         else:
             action_value = float(action)
 
-        # 创建gRPC action
-        simple_action = simulation_pb2.SimpleAction(value=action_value)
-        grpc_action = simulation_pb2.Action(simple_action=simple_action)
+        # 创建新的通用gRPC action
+        grpc_action = simulation_pb2.Action(float_value=action_value)
 
         request = simulation_pb2.StepEnvironmentRequest(env_id=self.env_id, action=grpc_action)
 

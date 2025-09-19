@@ -24,6 +24,7 @@ const (
 	SimulationService_ResetEnvironment_FullMethodName  = "/simulation.SimulationService/ResetEnvironment"
 	SimulationService_StepEnvironment_FullMethodName   = "/simulation.SimulationService/StepEnvironment"
 	SimulationService_CloseEnvironment_FullMethodName  = "/simulation.SimulationService/CloseEnvironment"
+	SimulationService_GetSpaces_FullMethodName         = "/simulation.SimulationService/GetSpaces"
 	SimulationService_StreamStep_FullMethodName        = "/simulation.SimulationService/StreamStep"
 )
 
@@ -41,6 +42,8 @@ type SimulationServiceClient interface {
 	StepEnvironment(ctx context.Context, in *StepEnvironmentRequest, opts ...grpc.CallOption) (*StepEnvironmentResponse, error)
 	// CloseEnvironment 关闭环境
 	CloseEnvironment(ctx context.Context, in *CloseEnvironmentRequest, opts ...grpc.CallOption) (*CloseEnvironmentResponse, error)
+	// GetSpaces 获取环境的动作空间和观察空间定义
+	GetSpaces(ctx context.Context, in *GetSpacesRequest, opts ...grpc.CallOption) (*GetSpacesResponse, error)
 	// StreamStep 流式执行仿真步骤 (可选，用于实时仿真)
 	StreamStep(ctx context.Context, opts ...grpc.CallOption) (SimulationService_StreamStepClient, error)
 }
@@ -98,6 +101,15 @@ func (c *simulationServiceClient) CloseEnvironment(ctx context.Context, in *Clos
 	return out, nil
 }
 
+func (c *simulationServiceClient) GetSpaces(ctx context.Context, in *GetSpacesRequest, opts ...grpc.CallOption) (*GetSpacesResponse, error) {
+	out := new(GetSpacesResponse)
+	err := c.cc.Invoke(ctx, SimulationService_GetSpaces_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *simulationServiceClient) StreamStep(ctx context.Context, opts ...grpc.CallOption) (SimulationService_StreamStepClient, error) {
 	stream, err := c.cc.NewStream(ctx, &SimulationService_ServiceDesc.Streams[0], SimulationService_StreamStep_FullMethodName, opts...)
 	if err != nil {
@@ -143,6 +155,8 @@ type SimulationServiceServer interface {
 	StepEnvironment(context.Context, *StepEnvironmentRequest) (*StepEnvironmentResponse, error)
 	// CloseEnvironment 关闭环境
 	CloseEnvironment(context.Context, *CloseEnvironmentRequest) (*CloseEnvironmentResponse, error)
+	// GetSpaces 获取环境的动作空间和观察空间定义
+	GetSpaces(context.Context, *GetSpacesRequest) (*GetSpacesResponse, error)
 	// StreamStep 流式执行仿真步骤 (可选，用于实时仿真)
 	StreamStep(SimulationService_StreamStepServer) error
 	mustEmbedUnimplementedSimulationServiceServer()
@@ -166,6 +180,9 @@ func (UnimplementedSimulationServiceServer) StepEnvironment(context.Context, *St
 }
 func (UnimplementedSimulationServiceServer) CloseEnvironment(context.Context, *CloseEnvironmentRequest) (*CloseEnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CloseEnvironment not implemented")
+}
+func (UnimplementedSimulationServiceServer) GetSpaces(context.Context, *GetSpacesRequest) (*GetSpacesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSpaces not implemented")
 }
 func (UnimplementedSimulationServiceServer) StreamStep(SimulationService_StreamStepServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamStep not implemented")
@@ -273,6 +290,24 @@ func _SimulationService_CloseEnvironment_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SimulationService_GetSpaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSpacesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimulationServiceServer).GetSpaces(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SimulationService_GetSpaces_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimulationServiceServer).GetSpaces(ctx, req.(*GetSpacesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SimulationService_StreamStep_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(SimulationServiceServer).StreamStep(&simulationServiceStreamStepServer{stream})
 }
@@ -325,6 +360,10 @@ var SimulationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CloseEnvironment",
 			Handler:    _SimulationService_CloseEnvironment_Handler,
+		},
+		{
+			MethodName: "GetSpaces",
+			Handler:    _SimulationService_GetSpaces_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

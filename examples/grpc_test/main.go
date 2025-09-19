@@ -70,12 +70,9 @@ func main() {
 
 	// 测试StepEnvironment - 使用简单action
 	log.Println("Testing StepEnvironment with simple action...")
-	simpleAction := &pb.SimpleAction{
-		Value: 1.5,
-	}
 	action := &pb.Action{
-		ActionType: &pb.Action_SimpleAction{
-			SimpleAction: simpleAction,
+		Data: &pb.Action_FloatValue{
+			FloatValue: 1.5,
 		},
 	}
 

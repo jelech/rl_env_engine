@@ -48,6 +48,9 @@ type Scenario interface {
 
 	// ValidateConfig 验证配置
 	ValidateConfig(config Config) error
+
+	// GetSpaces 获取场景的动作空间和观察空间定义
+	GetSpaces() SpaceDefinition
 }
 
 // Config 定义配置接口

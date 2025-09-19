@@ -249,30 +249,88 @@ func (s *GrpcServer) StreamStep(stream pb.SimulationService_StreamStepServer) er
 	}
 }
 
+// GetSpaces 获取指定场景的动作空间和观察空间定义
+func (s *GrpcServer) GetSpaces(ctx context.Context, req *pb.GetSpacesRequest) (*pb.GetSpacesResponse, error) {
+	// 获取场景
+	scenario, err := s.engine.GetScenario(req.Scenario)
+	if err != nil {
+		return nil, fmt.Errorf("scenario '%s' not found: %w", req.Scenario, err)
+	}
+
+	// 获取空间定义
+	spacesDef := scenario.GetSpaces()
+
+	// 转换为protobuf格式
+	actionSpace := &pb.ActionSpace{
+		Type:  pb.SpaceType(spacesDef.ActionSpace.Type),
+		Low:   spacesDef.ActionSpace.Low,
+		High:  spacesDef.ActionSpace.High,
+		Shape: spacesDef.ActionSpace.Shape,
+		Dtype: spacesDef.ActionSpace.Dtype,
+	}
+
+	observationSpace := &pb.ObservationSpace{
+		Type:  pb.SpaceType(spacesDef.ObservationSpace.Type),
+		Low:   spacesDef.ObservationSpace.Low,
+		High:  spacesDef.ObservationSpace.High,
+		Shape: spacesDef.ObservationSpace.Shape,
+		Dtype: spacesDef.ObservationSpace.Dtype,
+	}
+
+	return &pb.GetSpacesResponse{
+		ActionSpace:      actionSpace,
+		ObservationSpace: observationSpace,
+	}, nil
+}
+
 // convertProtoAction converts protobuf Action to core.Action
 func (s *GrpcServer) convertProtoAction(protoAction *pb.Action) ([]core.Action, error) {
 	if protoAction == nil {
 		return nil, fmt.Errorf("action is nil")
 	}
 
-	switch actionType := protoAction.ActionType.(type) {
-	case *pb.Action_SimpleAction:
-		// 验证SimpleAction不为nil
-		if actionType.SimpleAction == nil {
-			return nil, fmt.Errorf("simple action is nil")
+	var actionData interface{}
+
+	switch data := protoAction.Data.(type) {
+	case *pb.Action_FloatValue:
+		actionData = data.FloatValue
+	case *pb.Action_IntValue:
+		actionData = data.IntValue
+	case *pb.Action_BoolValue:
+		actionData = data.BoolValue
+	case *pb.Action_StringValue:
+		actionData = data.StringValue
+	case *pb.Action_FloatArray:
+		if data.FloatArray != nil {
+			actionData = data.FloatArray.Values
+		} else {
+			return nil, fmt.Errorf("float array is nil")
 		}
-
-		// 转换简单action
-		action := simple.NewSimpleAction(actionType.SimpleAction.Value)
-		if action == nil {
-			return nil, fmt.Errorf("failed to create simple action")
+	case *pb.Action_IntArray:
+		if data.IntArray != nil {
+			actionData = data.IntArray.Values
+		} else {
+			return nil, fmt.Errorf("int array is nil")
 		}
-
-		return []core.Action{action}, nil
-
+	case *pb.Action_BoolArray:
+		if data.BoolArray != nil {
+			actionData = data.BoolArray.Values
+		} else {
+			return nil, fmt.Errorf("bool array is nil")
+		}
+	case *pb.Action_RawData:
+		actionData = data.RawData
 	case nil:
-		return nil, fmt.Errorf("action type is nil")
+		return nil, fmt.Errorf("action data is nil")
 	default:
-		return nil, fmt.Errorf("unsupported action type: %T", actionType)
+		return nil, fmt.Errorf("unsupported action data type: %T", data)
 	}
+
+	// 创建通用Action
+	action := core.NewGenericAction(actionData)
+	if err := action.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid action: %w", err)
+	}
+
+	return []core.Action{action}, nil
 }

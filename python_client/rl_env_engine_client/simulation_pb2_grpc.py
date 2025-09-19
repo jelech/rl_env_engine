@@ -5,7 +5,7 @@ import warnings
 
 from . import simulation_pb2 as simulation__pb2
 
-GRPC_GENERATED_VERSION = "1.74.0"
+GRPC_GENERATED_VERSION = "1.75.0"
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -65,6 +65,12 @@ class SimulationServiceStub(object):
             response_deserializer=simulation__pb2.CloseEnvironmentResponse.FromString,
             _registered_method=True,
         )
+        self.GetSpaces = channel.unary_unary(
+            "/simulation.SimulationService/GetSpaces",
+            request_serializer=simulation__pb2.GetSpacesRequest.SerializeToString,
+            response_deserializer=simulation__pb2.GetSpacesResponse.FromString,
+            _registered_method=True,
+        )
         self.StreamStep = channel.stream_stream(
             "/simulation.SimulationService/StreamStep",
             request_serializer=simulation__pb2.StepEnvironmentRequest.SerializeToString,
@@ -106,6 +112,12 @@ class SimulationServiceServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def GetSpaces(self, request, context):
+        """GetSpaces 获取环境的动作空间和观察空间定义"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
     def StreamStep(self, request_iterator, context):
         """StreamStep 流式执行仿真步骤 (可选，用于实时仿真)"""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -139,6 +151,11 @@ def add_SimulationServiceServicer_to_server(servicer, server):
             servicer.CloseEnvironment,
             request_deserializer=simulation__pb2.CloseEnvironmentRequest.FromString,
             response_serializer=simulation__pb2.CloseEnvironmentResponse.SerializeToString,
+        ),
+        "GetSpaces": grpc.unary_unary_rpc_method_handler(
+            servicer.GetSpaces,
+            request_deserializer=simulation__pb2.GetSpacesRequest.FromString,
+            response_serializer=simulation__pb2.GetSpacesResponse.SerializeToString,
         ),
         "StreamStep": grpc.stream_stream_rpc_method_handler(
             servicer.StreamStep,
@@ -294,6 +311,36 @@ class SimulationService(object):
             "/simulation.SimulationService/CloseEnvironment",
             simulation__pb2.CloseEnvironmentRequest.SerializeToString,
             simulation__pb2.CloseEnvironmentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True,
+        )
+
+    @staticmethod
+    def GetSpaces(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/simulation.SimulationService/GetSpaces",
+            simulation__pb2.GetSpacesRequest.SerializeToString,
+            simulation__pb2.GetSpacesResponse.FromString,
             options,
             channel_credentials,
             insecure,
