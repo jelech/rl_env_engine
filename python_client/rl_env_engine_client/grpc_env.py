@@ -72,6 +72,7 @@ class GrpcEnv(gym.Env):
         self.client = None
         self._env_created = False
         self._spaces_loaded = False
+        self.verbose = verbose
 
         # 连接到服务器
         self._connect()
@@ -190,12 +191,12 @@ class GrpcEnv(gym.Env):
 
         return observation, info
 
-    def step(self, action: Union[int, float, np.ndarray]) -> Tuple[np.ndarray, float, bool, bool, Dict]:
+    def step(self, action: Union[int, float, np.ndarray, list]) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """执行一步"""
-        # 将action转换为适当的gRPC格式
-        grpc_action = self._convert_action_to_proto(action)
+        # 将action转换为gRPC格式（支持多动作）
+        grpc_actions = self._convert_actions_to_proto(action)
 
-        request = simulation_pb2.StepEnvironmentRequest(env_id=self.env_id, actions=[grpc_action])
+        request = simulation_pb2.StepEnvironmentRequest(env_id=self.env_id, actions=grpc_actions)
         response = self.client.StepEnvironment(request)
 
         # 解析响应
@@ -211,28 +212,37 @@ class GrpcEnv(gym.Env):
         # 构建info字典
         info = dict(response.info)
         info["action_taken"] = action
+        info["num_actions"] = len(grpc_actions)
 
         return observation, reward, terminated, truncated, info
 
-    def _convert_action_to_proto(self, action: Union[int, float, np.ndarray]) -> simulation_pb2.Action:
-        """将Python action转换为protobuf Action"""
+    def _convert_single_action_to_proto_cached(self, action):
+        """带缓存的动作转换（适用于离散动作）"""
+        if isinstance(action, (int, float, bool)) and len(self._action_cache) < self._max_cache_size:
+            cache_key = (type(action), action)
+            if cache_key not in self._action_cache:
+                self._action_cache[cache_key] = self._convert_single_action_to_proto(action)
+            return self._action_cache[cache_key]
+
+        return self._convert_single_action_to_proto(action)
+
+    def _convert_actions_to_proto(self, actions: Union[int, float, np.ndarray, list]) -> list:
+        """将Python actions转换为protobuf Action列表"""
+        if not isinstance(actions, (list, tuple)):
+            # 单个动作，包装成列表
+            return [self._convert_single_action_to_proto_cached(actions)]
+
+        # 多动作列表
+        return [self._convert_single_action_to_proto_cached(action) for action in actions]
+
+    def _convert_single_action_to_proto(self, action: Union[int, float, np.ndarray]) -> simulation_pb2.Action:
+        """将单个Python action转换为protobuf Action"""
+        # numpy数组处理
         if isinstance(action, np.ndarray):
-            if action.dtype in [np.float32, np.float64]:
-                if action.size == 1:
-                    return simulation_pb2.Action(float_value=float(action.item()))
-                else:
-                    return simulation_pb2.Action(float_array=action.astype(np.float64).tolist())
-            elif action.dtype in [np.int32, np.int64]:
-                if action.size == 1:
-                    return simulation_pb2.Action(int_value=int(action.item()))
-                else:
-                    return simulation_pb2.Action(int_array=action.astype(np.int64).tolist())
-            elif action.dtype == np.bool_:
-                if action.size == 1:
-                    return simulation_pb2.Action(bool_value=bool(action.item()))
-                else:
-                    return simulation_pb2.Action(bool_array=action.tolist())
-        elif isinstance(action, (int, np.integer)):
+            return self._handle_numpy_action(action)
+
+        # 基本类型处理
+        if isinstance(action, (int, np.integer)):
             return simulation_pb2.Action(int_value=int(action))
         elif isinstance(action, (float, np.floating)):
             return simulation_pb2.Action(float_value=float(action))
@@ -240,16 +250,61 @@ class GrpcEnv(gym.Env):
             return simulation_pb2.Action(bool_value=action)
         elif isinstance(action, str):
             return simulation_pb2.Action(string_value=action)
-        elif isinstance(action, (list, tuple)):
-            # 尝试推断类型
-            if all(isinstance(x, (int, np.integer)) for x in action):
-                return simulation_pb2.Action(int_array=list(action))
-            elif all(isinstance(x, (float, np.floating)) for x in action):
-                return simulation_pb2.Action(float_array=list(action))
-            elif all(isinstance(x, bool) for x in action):
-                return simulation_pb2.Action(bool_array=list(action))
 
-        # 回退：尝试转换为float
+        # 列表/元组处理
+        if isinstance(action, (list, tuple)):
+            return self._handle_sequence_action(action)
+
+        # 回退处理
+        return self._fallback_action_conversion(action)
+
+    def _handle_numpy_action(self, action: np.ndarray) -> simulation_pb2.Action:
+        """处理numpy数组动作"""
+        if action.size == 1:
+            # 单元素数组，提取标量值
+            scalar = action.item()
+            if action.dtype in [np.float32, np.float64]:
+                return simulation_pb2.Action(float_value=float(scalar))
+            elif action.dtype in [np.int32, np.int64]:
+                return simulation_pb2.Action(int_value=int(scalar))
+            elif action.dtype == np.bool_:
+                return simulation_pb2.Action(bool_value=bool(scalar))
+        else:
+            # 多元素数组
+            if action.dtype in [np.float32, np.float64]:
+                return simulation_pb2.Action(
+                    float_array=simulation_pb2.FloatArray(values=action.astype(np.float64).tolist())
+                )
+            elif action.dtype in [np.int32, np.int64]:
+                return simulation_pb2.Action(int_array=simulation_pb2.IntArray(values=action.astype(np.int64).tolist()))
+            elif action.dtype == np.bool_:
+                return simulation_pb2.Action(bool_array=simulation_pb2.BoolArray(values=action.tolist()))
+
+        # 回退：尝试转float数组
+        return simulation_pb2.Action(float_array=simulation_pb2.FloatArray(values=action.astype(np.float64).tolist()))
+
+    def _handle_sequence_action(self, action: Union[list, tuple]) -> simulation_pb2.Action:
+        """处理列表/元组动作"""
+        if not action:
+            raise ValueError("Empty action sequence")
+
+        # 类型检查并转换
+        if all(isinstance(x, (int, np.integer)) for x in action):
+            return simulation_pb2.Action(int_array=simulation_pb2.IntArray(values=[int(x) for x in action]))
+        elif all(isinstance(x, (float, np.floating)) for x in action):
+            return simulation_pb2.Action(float_array=simulation_pb2.FloatArray(values=[float(x) for x in action]))
+        elif all(isinstance(x, bool) for x in action):
+            return simulation_pb2.Action(bool_array=simulation_pb2.BoolArray(values=list(action)))
+        else:
+            # 混合类型，尝试转换为float数组
+            try:
+                float_values = [float(x) for x in action]
+                return simulation_pb2.Action(float_array=simulation_pb2.FloatArray(values=float_values))
+            except (ValueError, TypeError):
+                raise ValueError(f"Cannot convert mixed-type action to uniform array: {action}")
+
+    def _fallback_action_conversion(self, action) -> simulation_pb2.Action:
+        """回退动作转换"""
         try:
             return simulation_pb2.Action(float_value=float(action))
         except (ValueError, TypeError):
