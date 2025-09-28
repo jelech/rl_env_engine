@@ -10,15 +10,15 @@ cd "$(dirname "$0")"
 
 # 生成Python protobuf代码
 python3 -m grpc_tools.protoc \
-    --python_out=python_client \
-    --grpc_python_out=python_client \
+    --python_out=python_client/rl_env_engine_client \
+    --grpc_python_out=python_client/rl_env_engine_client \
     -I proto \
     proto/simulation.proto
 
 if [ $? -eq 0 ]; then
-    echo "Python protobuf files generated successfully in python_client/"
+    echo "Python protobuf files generated successfully in python_client/rl_env_engine_client/"
     echo "Generated files:"
-    echo "  - python_client/simulation_pb2.py"
+    echo "  - python_client/rl_env_engine_client/simulation_pb2.py"
     echo "  - python_client/simulation_pb2_grpc.py"
 else
     echo "Failed to generate Python protobuf files"

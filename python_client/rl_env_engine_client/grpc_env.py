@@ -46,6 +46,7 @@ class GrpcEnv(gym.Env):
         env_id: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None,
         auto_reset: bool = True,
+        verbose: bool = False,
     ):
         """
         初始化gRPC环境连接
@@ -75,8 +76,15 @@ class GrpcEnv(gym.Env):
         # 连接到服务器
         self._connect()
 
+        # 创建环境
+        self._create_environment()
+
         # 获取空间定义
         self._setup_spaces()
+
+    def verbose_print(self, *args, **kwargs):
+        if self.verbose:
+            print(*args, **kwargs)
 
     def _connect(self):
         """连接到gRPC服务器"""
@@ -86,9 +94,7 @@ class GrpcEnv(gym.Env):
 
             # 测试连接
             info_request = simulation_pb2.GetInfoRequest()
-            response = self.client.GetInfo(info_request)
-            print(f"Connected to: {response.name} v{response.version}")
-            print(f"Available scenarios: {list(response.scenarios)}")
+            self.client.GetInfo(info_request)
 
         except Exception as e:
             raise ConnectionError(f"Failed to connect to gRPC server at {self.host}:{self.port}: {e}")
@@ -96,19 +102,15 @@ class GrpcEnv(gym.Env):
     def _setup_spaces(self):
         """从服务器获取并设置动作空间和观察空间"""
         try:
-            # 获取空间定义
-            request = simulation_pb2.GetSpacesRequest(scenario=self.scenario)
+            request = simulation_pb2.GetSpacesRequest(env_id=self.env_id)
             response = self.client.GetSpaces(request)
 
-            # 设置action space
             self.action_space = self._convert_proto_space_to_gym(response.action_space)
-
-            # 设置observation space
             self.observation_space = self._convert_proto_space_to_gym(response.observation_space)
 
-            print(f"Scenario '{self.scenario}' loaded:")
-            print(f"  Action space: {self.action_space}")
-            print(f"  Observation space: {self.observation_space}")
+            self.verbose_print(f"Scenario '{self.scenario}' loaded:")
+            self.verbose_print(f"  Action space: {self.action_space}")
+            self.verbose_print(f"  Observation space: {self.observation_space}")
 
             self._spaces_loaded = True
 
@@ -148,15 +150,19 @@ class GrpcEnv(gym.Env):
 
         # 将配置转换为字符串字典（gRPC要求）
         config_str = {k: str(v) for k, v in self.config.items()}
-
         request = simulation_pb2.CreateEnvironmentRequest(env_id=self.env_id, scenario=self.scenario, config=config_str)
-
         response = self.client.CreateEnvironment(request)
         if not response.success:
             raise RuntimeError(f"Failed to create environment '{self.scenario}': {response.message}")
 
         self._env_created = True
-        print(f"Environment created: {self.env_id} (scenario: {self.scenario})")
+        self.verbose_print(f"Environment created: {self.env_id} (scenario: {self.scenario})")
+
+    def get_spaces(self) -> Tuple[gym.Space, gym.Space]:
+        """获取动作空间和观察空间"""
+        if not self._spaces_loaded:
+            self._setup_spaces()
+        return self.action_space, self.observation_space
 
     def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
         """重置环境"""
@@ -189,7 +195,7 @@ class GrpcEnv(gym.Env):
         # 将action转换为适当的gRPC格式
         grpc_action = self._convert_action_to_proto(action)
 
-        request = simulation_pb2.StepEnvironmentRequest(env_id=self.env_id, action=grpc_action)
+        request = simulation_pb2.StepEnvironmentRequest(env_id=self.env_id, actions=[grpc_action])
         response = self.client.StepEnvironment(request)
 
         # 解析响应
@@ -255,7 +261,7 @@ class GrpcEnv(gym.Env):
             try:
                 request = simulation_pb2.CloseEnvironmentRequest(env_id=self.env_id)
                 response = self.client.CloseEnvironment(request)
-                print(f"Environment closed: {response.message}")
+                self.verbose_print(f"Environment closed: {response.message}")
             except Exception as e:
                 print(f"Error closing environment: {e}")
             finally:
@@ -277,161 +283,3 @@ class GrpcEnv(gym.Env):
         except Exception as e:
             print(f"Error getting scenarios: {e}")
             return []
-
-
-# 向后兼容的环境包装器
-class SimpleEnv(GrpcEnv):
-    """
-    向后兼容的环境包装器
-    为了保持与现有代码的兼容性
-    """
-
-    def __init__(self, host="127.0.0.1", port=9090, env_id=None, max_steps=50, tolerance=0.5):
-        config = {"max_steps": max_steps, "tolerance": tolerance}
-        super(SimpleEnv, self).__init__(scenario="default", host=host, port=port, env_id=env_id, config=config)
-
-
-def test_generic_env():
-    """测试通用gRPC环境"""
-    print("Testing Generic gRPC Environment...")
-
-    try:
-        # 创建通用环境
-        env = GrpcEnv(scenario="default", config={"max_steps": 20, "tolerance": 0.3})
-
-        print(f"\nScenario: {env.scenario}")
-        print(f"Available scenarios: {env.get_available_scenarios()}")
-
-        # 重置环境
-        obs, info = env.reset()
-        print(f"Initial observation: {obs}")
-        print(f"Initial info: {info}")
-
-        total_reward = 0
-        step_count = 0
-
-        # 运行一个episode
-        for step in range(20):  # 最大20步
-            # 随机动作
-            action = env.action_space.sample()
-
-            obs, reward, terminated, truncated, info = env.step(action)
-            total_reward += reward
-            step_count += 1
-
-            print(f"Step {step_count}: action={action}, reward={reward:.3f}, done={terminated}")
-
-            if terminated or truncated:
-                print(f"Episode finished! Total reward: {total_reward:.3f}")
-                break
-
-        env.close()
-        print("Generic environment test completed successfully!")
-
-        # 测试不同类型的action
-        print("\n=== Testing different action types ===")
-        env2 = GrpcEnv(scenario="default", config={"max_steps": 5})
-
-        obs, _ = env2.reset()
-
-        # 测试不同类型的action
-        test_actions = [
-            1.5,  # float
-            np.array([2.0]),  # numpy array
-            np.array([1.0, 2.0]),  # multi-dimensional array
-        ]
-
-        for i, action in enumerate(test_actions):
-            try:
-                obs, reward, terminated, truncated, info = env2.step(action)
-                print(f"Action {i+1} ({type(action)}): {action} -> reward: {reward:.3f}")
-                if terminated:
-                    obs, _ = env2.reset()
-            except Exception as e:
-                print(f"Action {i+1} failed: {e}")
-
-        env2.close()
-
-    except Exception as e:
-        print(f"❌ Test failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-
-
-def test_simple_env():
-    """测试兼容环境（向后兼容测试）"""
-    print("Testing gRPC Environment...")
-
-    # 创建环境
-    env = SimpleEnv(max_steps=20, tolerance=0.3)
-
-    try:
-        # 重置环境
-        obs, info = env.reset()
-        print(f"Initial observation: {obs}")
-        print(f"Initial info: {info}")
-
-        total_reward = 0
-        step_count = 0
-
-        # 运行一个episode
-        while True:
-            # 简单策略：朝目标方向移动
-            current_value = obs[0]
-            target_value = obs[1]
-
-            # 计算朝目标移动的动作 (带一些随机性)
-            diff = target_value - current_value
-            action = np.array([diff * 0.7 + np.random.normal(0, 0.1)])
-            action = np.clip(action, -10, 10)  # 限制动作范围
-
-            obs, reward, terminated, truncated, info = env.step(action)
-            total_reward += reward
-            step_count += 1
-
-            print(
-                f"Step {step_count}: action={action[0]:.3f}, "
-                f"current={obs[0]:.3f}, reward={reward:.3f}, "
-                f"done={terminated}"
-            )
-
-            if terminated or truncated:
-                print(f"Episode finished! Total reward: {total_reward:.3f}")
-                break
-
-        print("Test completed successfully!")
-
-        # 测试多个episodes
-        print("\nTesting multiple episodes...")
-        for episode in range(3):
-            obs, _ = env.reset()
-            episode_reward = 0
-            steps = 0
-
-            while True:
-                current_value = obs[0]
-                target_value = obs[1]
-                diff = target_value - current_value
-                action = np.array([diff * 0.8])
-
-                obs, reward, terminated, truncated, info = env.step(action)
-                episode_reward += reward
-                steps += 1
-
-                if terminated or truncated:
-                    break
-
-            print(f"Episode {episode + 1}: {steps} steps, " f"reward: {episode_reward:.3f}")
-
-    finally:
-        env.close()
-
-
-if __name__ == "__main__":
-    print("=== Testing Generic gRPC Environment ===")
-    test_generic_env()
-
-    print("\n" + "=" * 50)
-    print("=== Testing Environment (Backward Compatibility) ===")
-    test_simple_env()

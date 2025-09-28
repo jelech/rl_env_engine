@@ -3,31 +3,31 @@
 import grpc
 import warnings
 
-from . import simulation_pb2 as simulation__pb2
+import simulation_pb2 as simulation__pb2
 
-GRPC_GENERATED_VERSION = "1.75.0"
+GRPC_GENERATED_VERSION = '1.75.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
 try:
     from grpc._utilities import first_version_is_lower
-
     _version_not_supported = first_version_is_lower(GRPC_VERSION, GRPC_GENERATED_VERSION)
 except ImportError:
     _version_not_supported = True
 
 if _version_not_supported:
     raise RuntimeError(
-        f"The grpc package installed is at version {GRPC_VERSION},"
-        + f" but the generated code in simulation_pb2_grpc.py depends on"
-        + f" grpcio>={GRPC_GENERATED_VERSION}."
-        + f" Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}"
-        + f" or downgrade your generated code using grpcio-tools<={GRPC_VERSION}."
+        f'The grpc package installed is at version {GRPC_VERSION},'
+        + f' but the generated code in simulation_pb2_grpc.py depends on'
+        + f' grpcio>={GRPC_GENERATED_VERSION}.'
+        + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
+        + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
 class SimulationServiceStub(object):
-    """SimulationService 定义仿真服务的gRPC接口"""
+    """SimulationService 定义仿真服务的gRPC接口
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -36,159 +36,160 @@ class SimulationServiceStub(object):
             channel: A grpc.Channel.
         """
         self.GetInfo = channel.unary_unary(
-            "/simulation.SimulationService/GetInfo",
-            request_serializer=simulation__pb2.GetInfoRequest.SerializeToString,
-            response_deserializer=simulation__pb2.GetInfoResponse.FromString,
-            _registered_method=True,
-        )
+                '/simulation.SimulationService/GetInfo',
+                request_serializer=simulation__pb2.GetInfoRequest.SerializeToString,
+                response_deserializer=simulation__pb2.GetInfoResponse.FromString,
+                _registered_method=True)
         self.CreateEnvironment = channel.unary_unary(
-            "/simulation.SimulationService/CreateEnvironment",
-            request_serializer=simulation__pb2.CreateEnvironmentRequest.SerializeToString,
-            response_deserializer=simulation__pb2.CreateEnvironmentResponse.FromString,
-            _registered_method=True,
-        )
+                '/simulation.SimulationService/CreateEnvironment',
+                request_serializer=simulation__pb2.CreateEnvironmentRequest.SerializeToString,
+                response_deserializer=simulation__pb2.CreateEnvironmentResponse.FromString,
+                _registered_method=True)
         self.ResetEnvironment = channel.unary_unary(
-            "/simulation.SimulationService/ResetEnvironment",
-            request_serializer=simulation__pb2.ResetEnvironmentRequest.SerializeToString,
-            response_deserializer=simulation__pb2.ResetEnvironmentResponse.FromString,
-            _registered_method=True,
-        )
+                '/simulation.SimulationService/ResetEnvironment',
+                request_serializer=simulation__pb2.ResetEnvironmentRequest.SerializeToString,
+                response_deserializer=simulation__pb2.ResetEnvironmentResponse.FromString,
+                _registered_method=True)
         self.StepEnvironment = channel.unary_unary(
-            "/simulation.SimulationService/StepEnvironment",
-            request_serializer=simulation__pb2.StepEnvironmentRequest.SerializeToString,
-            response_deserializer=simulation__pb2.StepEnvironmentResponse.FromString,
-            _registered_method=True,
-        )
+                '/simulation.SimulationService/StepEnvironment',
+                request_serializer=simulation__pb2.StepEnvironmentRequest.SerializeToString,
+                response_deserializer=simulation__pb2.StepEnvironmentResponse.FromString,
+                _registered_method=True)
         self.CloseEnvironment = channel.unary_unary(
-            "/simulation.SimulationService/CloseEnvironment",
-            request_serializer=simulation__pb2.CloseEnvironmentRequest.SerializeToString,
-            response_deserializer=simulation__pb2.CloseEnvironmentResponse.FromString,
-            _registered_method=True,
-        )
+                '/simulation.SimulationService/CloseEnvironment',
+                request_serializer=simulation__pb2.CloseEnvironmentRequest.SerializeToString,
+                response_deserializer=simulation__pb2.CloseEnvironmentResponse.FromString,
+                _registered_method=True)
         self.GetSpaces = channel.unary_unary(
-            "/simulation.SimulationService/GetSpaces",
-            request_serializer=simulation__pb2.GetSpacesRequest.SerializeToString,
-            response_deserializer=simulation__pb2.GetSpacesResponse.FromString,
-            _registered_method=True,
-        )
+                '/simulation.SimulationService/GetSpaces',
+                request_serializer=simulation__pb2.GetSpacesRequest.SerializeToString,
+                response_deserializer=simulation__pb2.GetSpacesResponse.FromString,
+                _registered_method=True)
         self.StreamStep = channel.stream_stream(
-            "/simulation.SimulationService/StreamStep",
-            request_serializer=simulation__pb2.StepEnvironmentRequest.SerializeToString,
-            response_deserializer=simulation__pb2.StepEnvironmentResponse.FromString,
-            _registered_method=True,
-        )
+                '/simulation.SimulationService/StreamStep',
+                request_serializer=simulation__pb2.StepEnvironmentRequest.SerializeToString,
+                response_deserializer=simulation__pb2.StepEnvironmentResponse.FromString,
+                _registered_method=True)
 
 
 class SimulationServiceServicer(object):
-    """SimulationService 定义仿真服务的gRPC接口"""
+    """SimulationService 定义仿真服务的gRPC接口
+    """
 
     def GetInfo(self, request, context):
-        """GetInfo 获取服务信息"""
+        """GetInfo 获取服务信息
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def CreateEnvironment(self, request, context):
-        """CreateEnvironment 创建环境"""
+        """CreateEnvironment 创建环境
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def ResetEnvironment(self, request, context):
-        """ResetEnvironment 重置环境"""
+        """ResetEnvironment 重置环境
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def StepEnvironment(self, request, context):
-        """StepEnvironment 执行一步仿真"""
+        """StepEnvironment 执行一步仿真
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def CloseEnvironment(self, request, context):
-        """CloseEnvironment 关闭环境"""
+        """CloseEnvironment 关闭环境
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def GetSpaces(self, request, context):
-        """GetSpaces 获取环境的动作空间和观察空间定义"""
+        """GetSpaces 获取环境的动作空间和观察空间定义
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def StreamStep(self, request_iterator, context):
-        """StreamStep 流式执行仿真步骤 (可选，用于实时仿真)"""
+        """StreamStep 流式执行仿真步骤 (可选，用于实时仿真)
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
 
 def add_SimulationServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        "GetInfo": grpc.unary_unary_rpc_method_handler(
-            servicer.GetInfo,
-            request_deserializer=simulation__pb2.GetInfoRequest.FromString,
-            response_serializer=simulation__pb2.GetInfoResponse.SerializeToString,
-        ),
-        "CreateEnvironment": grpc.unary_unary_rpc_method_handler(
-            servicer.CreateEnvironment,
-            request_deserializer=simulation__pb2.CreateEnvironmentRequest.FromString,
-            response_serializer=simulation__pb2.CreateEnvironmentResponse.SerializeToString,
-        ),
-        "ResetEnvironment": grpc.unary_unary_rpc_method_handler(
-            servicer.ResetEnvironment,
-            request_deserializer=simulation__pb2.ResetEnvironmentRequest.FromString,
-            response_serializer=simulation__pb2.ResetEnvironmentResponse.SerializeToString,
-        ),
-        "StepEnvironment": grpc.unary_unary_rpc_method_handler(
-            servicer.StepEnvironment,
-            request_deserializer=simulation__pb2.StepEnvironmentRequest.FromString,
-            response_serializer=simulation__pb2.StepEnvironmentResponse.SerializeToString,
-        ),
-        "CloseEnvironment": grpc.unary_unary_rpc_method_handler(
-            servicer.CloseEnvironment,
-            request_deserializer=simulation__pb2.CloseEnvironmentRequest.FromString,
-            response_serializer=simulation__pb2.CloseEnvironmentResponse.SerializeToString,
-        ),
-        "GetSpaces": grpc.unary_unary_rpc_method_handler(
-            servicer.GetSpaces,
-            request_deserializer=simulation__pb2.GetSpacesRequest.FromString,
-            response_serializer=simulation__pb2.GetSpacesResponse.SerializeToString,
-        ),
-        "StreamStep": grpc.stream_stream_rpc_method_handler(
-            servicer.StreamStep,
-            request_deserializer=simulation__pb2.StepEnvironmentRequest.FromString,
-            response_serializer=simulation__pb2.StepEnvironmentResponse.SerializeToString,
-        ),
+            'GetInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetInfo,
+                    request_deserializer=simulation__pb2.GetInfoRequest.FromString,
+                    response_serializer=simulation__pb2.GetInfoResponse.SerializeToString,
+            ),
+            'CreateEnvironment': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateEnvironment,
+                    request_deserializer=simulation__pb2.CreateEnvironmentRequest.FromString,
+                    response_serializer=simulation__pb2.CreateEnvironmentResponse.SerializeToString,
+            ),
+            'ResetEnvironment': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResetEnvironment,
+                    request_deserializer=simulation__pb2.ResetEnvironmentRequest.FromString,
+                    response_serializer=simulation__pb2.ResetEnvironmentResponse.SerializeToString,
+            ),
+            'StepEnvironment': grpc.unary_unary_rpc_method_handler(
+                    servicer.StepEnvironment,
+                    request_deserializer=simulation__pb2.StepEnvironmentRequest.FromString,
+                    response_serializer=simulation__pb2.StepEnvironmentResponse.SerializeToString,
+            ),
+            'CloseEnvironment': grpc.unary_unary_rpc_method_handler(
+                    servicer.CloseEnvironment,
+                    request_deserializer=simulation__pb2.CloseEnvironmentRequest.FromString,
+                    response_serializer=simulation__pb2.CloseEnvironmentResponse.SerializeToString,
+            ),
+            'GetSpaces': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSpaces,
+                    request_deserializer=simulation__pb2.GetSpacesRequest.FromString,
+                    response_serializer=simulation__pb2.GetSpacesResponse.SerializeToString,
+            ),
+            'StreamStep': grpc.stream_stream_rpc_method_handler(
+                    servicer.StreamStep,
+                    request_deserializer=simulation__pb2.StepEnvironmentRequest.FromString,
+                    response_serializer=simulation__pb2.StepEnvironmentResponse.SerializeToString,
+            ),
     }
-    generic_handler = grpc.method_handlers_generic_handler("simulation.SimulationService", rpc_method_handlers)
+    generic_handler = grpc.method_handlers_generic_handler(
+            'simulation.SimulationService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers("simulation.SimulationService", rpc_method_handlers)
+    server.add_registered_method_handlers('simulation.SimulationService', rpc_method_handlers)
 
 
-# This class is part of an EXPERIMENTAL API.
+ # This class is part of an EXPERIMENTAL API.
 class SimulationService(object):
-    """SimulationService 定义仿真服务的gRPC接口"""
+    """SimulationService 定义仿真服务的gRPC接口
+    """
 
     @staticmethod
-    def GetInfo(
-        request,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
+    def GetInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/simulation.SimulationService/GetInfo",
+            '/simulation.SimulationService/GetInfo',
             simulation__pb2.GetInfoRequest.SerializeToString,
             simulation__pb2.GetInfoResponse.FromString,
             options,
@@ -199,26 +200,23 @@ class SimulationService(object):
             wait_for_ready,
             timeout,
             metadata,
-            _registered_method=True,
-        )
+            _registered_method=True)
 
     @staticmethod
-    def CreateEnvironment(
-        request,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
+    def CreateEnvironment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/simulation.SimulationService/CreateEnvironment",
+            '/simulation.SimulationService/CreateEnvironment',
             simulation__pb2.CreateEnvironmentRequest.SerializeToString,
             simulation__pb2.CreateEnvironmentResponse.FromString,
             options,
@@ -229,26 +227,23 @@ class SimulationService(object):
             wait_for_ready,
             timeout,
             metadata,
-            _registered_method=True,
-        )
+            _registered_method=True)
 
     @staticmethod
-    def ResetEnvironment(
-        request,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
+    def ResetEnvironment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/simulation.SimulationService/ResetEnvironment",
+            '/simulation.SimulationService/ResetEnvironment',
             simulation__pb2.ResetEnvironmentRequest.SerializeToString,
             simulation__pb2.ResetEnvironmentResponse.FromString,
             options,
@@ -259,26 +254,23 @@ class SimulationService(object):
             wait_for_ready,
             timeout,
             metadata,
-            _registered_method=True,
-        )
+            _registered_method=True)
 
     @staticmethod
-    def StepEnvironment(
-        request,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
+    def StepEnvironment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/simulation.SimulationService/StepEnvironment",
+            '/simulation.SimulationService/StepEnvironment',
             simulation__pb2.StepEnvironmentRequest.SerializeToString,
             simulation__pb2.StepEnvironmentResponse.FromString,
             options,
@@ -289,26 +281,23 @@ class SimulationService(object):
             wait_for_ready,
             timeout,
             metadata,
-            _registered_method=True,
-        )
+            _registered_method=True)
 
     @staticmethod
-    def CloseEnvironment(
-        request,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
+    def CloseEnvironment(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/simulation.SimulationService/CloseEnvironment",
+            '/simulation.SimulationService/CloseEnvironment',
             simulation__pb2.CloseEnvironmentRequest.SerializeToString,
             simulation__pb2.CloseEnvironmentResponse.FromString,
             options,
@@ -319,26 +308,23 @@ class SimulationService(object):
             wait_for_ready,
             timeout,
             metadata,
-            _registered_method=True,
-        )
+            _registered_method=True)
 
     @staticmethod
-    def GetSpaces(
-        request,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
+    def GetSpaces(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/simulation.SimulationService/GetSpaces",
+            '/simulation.SimulationService/GetSpaces',
             simulation__pb2.GetSpacesRequest.SerializeToString,
             simulation__pb2.GetSpacesResponse.FromString,
             options,
@@ -349,26 +335,23 @@ class SimulationService(object):
             wait_for_ready,
             timeout,
             metadata,
-            _registered_method=True,
-        )
+            _registered_method=True)
 
     @staticmethod
-    def StreamStep(
-        request_iterator,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
+    def StreamStep(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.stream_stream(
             request_iterator,
             target,
-            "/simulation.SimulationService/StreamStep",
+            '/simulation.SimulationService/StreamStep',
             simulation__pb2.StepEnvironmentRequest.SerializeToString,
             simulation__pb2.StepEnvironmentResponse.FromString,
             options,
@@ -379,5 +362,4 @@ class SimulationService(object):
             wait_for_ready,
             timeout,
             metadata,
-            _registered_method=True,
-        )
+            _registered_method=True)

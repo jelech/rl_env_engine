@@ -8,6 +8,7 @@ import (
 
 	"github.com/jelech/rl_env_engine/core"
 	pb "github.com/jelech/rl_env_engine/proto"
+	"github.com/jelech/rl_env_engine/scenarios/cartpole"
 	"github.com/jelech/rl_env_engine/scenarios/simple"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -28,6 +29,7 @@ func NewGrpcServer() *GrpcServer {
 	// 注册简单测试场景
 	simpleScenario := simple.NewSimpleScenario()
 	engine.RegisterScenario(simpleScenario)
+	engine.RegisterScenario(cartpole.NewCartPoleScenario())
 
 	return &GrpcServer{
 		engine:       engine,

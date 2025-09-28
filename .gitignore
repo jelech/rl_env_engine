@@ -39,3 +39,7 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+*.egg-info
+__pycache__
+*_tensorboard
