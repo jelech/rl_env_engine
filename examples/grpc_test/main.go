@@ -77,8 +77,8 @@ func main() {
 	}
 
 	stepResp, err := client.StepEnvironment(ctx, &pb.StepEnvironmentRequest{
-		EnvId:  envID,
-		Action: action,
+		EnvId:   envID,
+		Actions: []*pb.Action{action},
 	})
 	if err != nil {
 		log.Printf("StepEnvironment failed: %v", err)

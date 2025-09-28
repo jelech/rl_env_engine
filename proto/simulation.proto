@@ -61,7 +61,7 @@ message ResetEnvironmentResponse {
 
 message StepEnvironmentRequest {
   string env_id = 1;
-  Action action = 2;
+  repeated Action actions = 2;
 }
 
 message StepEnvironmentResponse {

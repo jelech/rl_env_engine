@@ -167,10 +167,13 @@ func (s *GrpcServer) StepEnvironment(ctx context.Context, req *pb.StepEnvironmen
 		return nil, fmt.Errorf("environment %s not found", req.EnvId)
 	}
 
-	// 转换action从protobuf格式
-	actions, err := s.convertProtoAction(req.Action)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert action: %v", err)
+	var actions []core.Action
+	for _, v := range req.Actions {
+		action, err := s.convertProtoAction(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert action: %v", err)
+		}
+		actions = append(actions, action...)
 	}
 
 	observations, rewards, done, err := env.Step(ctx, actions)
