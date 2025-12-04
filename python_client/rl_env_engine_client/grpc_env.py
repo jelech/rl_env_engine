@@ -73,6 +73,8 @@ class GrpcEnv(gym.Env):
         self._env_created = False
         self._spaces_loaded = False
         self.verbose = verbose
+        self._action_cache = {}  # 用于缓存动作转换结果
+        self._max_cache_size = 1000  # 缓存大小限制
 
         # 连接到服务器
         self._connect()
