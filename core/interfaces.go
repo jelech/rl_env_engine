@@ -53,6 +53,11 @@ type Scenario interface {
 	ValidateConfig(config Config) error
 }
 
+// ActionCreator 接口，可选实现，用于从 float64 数组创建 Action
+type ActionCreator interface {
+	CreateAction(data []float64) (Action, error)
+}
+
 // Config 定义配置接口
 type Config interface {
 	GetValue(key string) interface{}
