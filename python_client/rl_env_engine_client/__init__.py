@@ -15,6 +15,8 @@
 __all__ = [
     "GrpcEnv",
     "SimulationGrpcClient",
+    "simulation_pb2",
+    "simulation_pb2_grpc",
 ]
 
 __version__ = "0.1.0"
@@ -23,5 +25,9 @@ __version__ = "0.1.0"
 from .grpc_env import GrpcEnv  # noqa: E402
 from .grpc_client import SimulationGrpcClient  # noqa: E402
 
+# 导出 protobuf 生成的模块
+from . import simulation_pb2  # noqa: E402
+from . import simulation_pb2_grpc  # noqa: E402
+
 # 主要导出通用环境类
-__all__ = ["GrpcEnv", "SimulationGrpcClient"]
+__all__ = ["GrpcEnv", "SimulationGrpcClient", "simulation_pb2", "simulation_pb2_grpc"]

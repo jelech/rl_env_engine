@@ -33,7 +33,64 @@
 - `grpc_env.py` - 通用gRPC环境包装器（⭐ 推荐）
 - `grpc_client.py` - 基础gRPC客户端
 - `simulation_pb2.py` / `simulation_pb2_grpc.py` - 由 proto 生成的 gRPC 代码（已随包分发）
+- `simulation_pb2.pyi` - 类型存根文件（用于 IDE 自动补全和类型检查）
 - `examples/` - 示例代码和测试脚本
+
+## IDE 类型提示和自动补全
+
+本包包含完整的类型存根文件（`.pyi`），支持 IDE 自动补全和类型检查：
+
+### 支持的 IDE
+
+- **VS Code** + Pylance（推荐）
+- **PyCharm**（自动识别）
+- **其他支持 Pyright 的编辑器**
+
+### 使用示例
+
+```python
+from rl_env_engine_client import simulation_pb2
+
+# 创建 Action 对象 - IDE 会提供自动补全
+action = simulation_pb2.Action(float_value=1.5)
+# 输入 action. 时，IDE 会显示所有可用属性：
+# - float_value: float
+# - int_value: int
+# - bool_value: bool
+# - float_array: FloatArray
+# - int_array: IntArray
+# - bool_array: BoolArray
+# - string_value: str
+# - raw_data: bytes
+
+# 创建请求对象 - 有完整的类型提示
+request = simulation_pb2.StepEnvironmentRequest(
+    env_id="test_env",
+    actions=[action]
+)
+# 输入 request. 时，IDE 会显示：
+# - env_id: str
+# - actions: RepeatedCompositeFieldContainer[Action]
+```
+
+### 生成类型存根
+
+类型存根文件在生成 protobuf 代码时自动创建。如果需要重新生成：
+
+```bash
+# 在项目根目录运行
+./gen_grpc.sh
+```
+
+这会自动生成 `simulation_pb2.pyi` 类型存根文件。
+
+### 类型检查配置
+
+项目已配置 `pyproject.toml` 支持类型检查。如果 IDE 没有显示类型提示：
+
+1. 确保安装了 `mypy-protobuf`：`pip install mypy-protobuf`
+2. 重启 IDE
+3. 检查 IDE 的类型检查设置（VS Code: 确保 Pylance 已启用）
 
 ## 快速开始
 

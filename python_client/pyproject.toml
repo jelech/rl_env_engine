@@ -43,6 +43,7 @@ dev = [
   "black",
   "isort",
   "mypy",
+  "mypy-protobuf",
   "ruff",
   "pytest"
 ]
@@ -55,3 +56,23 @@ Issues = "https://github.com/jelech/rl_env_engine/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["rl_env_engine_client*"]
+
+# 确保类型存根文件被包含在包中
+[tool.setuptools.package-data]
+rl_env_engine_client = ["*.pyi"]
+
+# Pyright/Pylance 类型检查配置
+[tool.pyright]
+include = ["rl_env_engine_client"]
+exclude = ["**/__pycache__", "**/.*"]
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+# MyPy 类型检查配置
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = false

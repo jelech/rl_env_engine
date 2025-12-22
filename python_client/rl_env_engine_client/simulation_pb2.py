@@ -22,9 +22,10 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10simulation.proto\x12\nsimulation\"\x10\n\x0eGetInfoRequest\"\xb6\x01\n\x0fGetInfoResponse\x12\x11\n\tscenarios\x18\x01 \x03(\t\x12\x0f\n\x07\x65nv_ids\x18\x02 \x03(\t\x12\x33\n\x04info\x18\x03 \x03(\x0b\x32%.simulation.GetInfoResponse.InfoEntry\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04name\x18\x05 \x01(\t\x1a+\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\xad\x01\n\x18\x43reateEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\x12\x10\n\x08scenario\x18\x02 \x01(\t\x12@\n\x06\x63onfig\x18\x03 \x03(\x0b\x32\x30.simulation.CreateEnvironmentRequest.ConfigEntry\x1a-\n\x0b\x43onfigEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"=\n\x19\x43reateEnvironmentResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\")\n\x17ResetEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\"\xb4\x01\n\x18ResetEnvironmentResponse\x12-\n\x0cobservations\x18\x01 \x03(\x0b\x32\x17.simulation.Observation\x12<\n\x04info\x18\x02 \x03(\x0b\x32..simulation.ResetEnvironmentResponse.InfoEntry\x1a+\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"M\n\x16StepEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\x12#\n\x07\x61\x63tions\x18\x02 \x03(\x0b\x32\x12.simulation.Action\"\xd1\x01\n\x17StepEnvironmentResponse\x12-\n\x0cobservations\x18\x01 \x03(\x0b\x32\x17.simulation.Observation\x12\x0f\n\x07rewards\x18\x02 \x03(\x01\x12\x0c\n\x04\x64one\x18\x03 \x03(\x08\x12;\n\x04info\x18\x04 \x03(\x0b\x32-.simulation.StepEnvironmentResponse.InfoEntry\x1a+\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\")\n\x17\x43loseEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\"<\n\x18\x43loseEnvironmentResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x85\x01\n\x0bObservation\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\x01\x12\x37\n\x08metadata\x18\x02 \x03(\x0b\x32%.simulation.Observation.MetadataEntry\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x85\x02\n\x06\x41\x63tion\x12\x15\n\x0b\x66loat_value\x18\x01 \x01(\x01H\x00\x12\x13\n\tint_value\x18\x02 \x01(\x03H\x00\x12\x14\n\nbool_value\x18\x03 \x01(\x08H\x00\x12-\n\x0b\x66loat_array\x18\x04 \x01(\x0b\x32\x16.simulation.FloatArrayH\x00\x12)\n\tint_array\x18\x05 \x01(\x0b\x32\x14.simulation.IntArrayH\x00\x12+\n\nbool_array\x18\x06 \x01(\x0b\x32\x15.simulation.BoolArrayH\x00\x12\x16\n\x0cstring_value\x18\x07 \x01(\tH\x00\x12\x12\n\x08raw_data\x18\x08 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"\x1c\n\nFloatArray\x12\x0e\n\x06values\x18\x01 \x03(\x01\"\x1a\n\x08IntArray\x12\x0e\n\x06values\x18\x01 \x03(\x03\"\x1b\n\tBoolArray\x12\x0e\n\x06values\x18\x01 \x03(\x08\"\"\n\x10GetSpacesRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\"{\n\x11GetSpacesResponse\x12-\n\x0c\x61\x63tion_space\x18\x01 \x01(\x0b\x32\x17.simulation.ActionSpace\x12\x37\n\x11observation_space\x18\x02 \x01(\x0b\x32\x1c.simulation.ObservationSpace\"\x84\x01\n\x0b\x41\x63tionSpace\x12#\n\x04type\x18\x01 \x01(\x0e\x32\x15.simulation.SpaceType\x12\x0b\n\x03low\x18\x02 \x03(\x01\x12\x0c\n\x04high\x18\x03 \x03(\x01\x12\r\n\x05shape\x18\x04 \x03(\x05\x12\r\n\x05\x64type\x18\x05 \x01(\t\x12\x17\n\x0f\x64iscrete_values\x18\x06 \x03(\x01\"p\n\x10ObservationSpace\x12#\n\x04type\x18\x01 \x01(\x0e\x32\x15.simulation.SpaceType\x12\x0b\n\x03low\x18\x02 \x03(\x01\x12\x0c\n\x04high\x18\x03 \x03(\x01\x12\r\n\x05shape\x18\x04 \x03(\x05\x12\r\n\x05\x64type\x18\x05 \x01(\t*\\\n\tSpaceType\x12\x07\n\x03\x42OX\x10\x00\x12\x0c\n\x08\x44ISCRETE\x10\x01\x12\x12\n\x0eMULTI_DISCRETE\x10\x02\x12\x10\n\x0cMULTI_BINARY\x10\x03\x12\x12\n\x0e\x44ISCRETE_FLOAT\x10\x04\x32\xf8\x04\n\x11SimulationService\x12\x42\n\x07GetInfo\x12\x1a.simulation.GetInfoRequest\x1a\x1b.simulation.GetInfoResponse\x12`\n\x11\x43reateEnvironment\x12$.simulation.CreateEnvironmentRequest\x1a%.simulation.CreateEnvironmentResponse\x12]\n\x10ResetEnvironment\x12#.simulation.ResetEnvironmentRequest\x1a$.simulation.ResetEnvironmentResponse\x12Z\n\x0fStepEnvironment\x12\".simulation.StepEnvironmentRequest\x1a#.simulation.StepEnvironmentResponse\x12]\n\x10\x43loseEnvironment\x12#.simulation.CloseEnvironmentRequest\x1a$.simulation.CloseEnvironmentResponse\x12H\n\tGetSpaces\x12\x1c.simulation.GetSpacesRequest\x1a\x1d.simulation.GetSpacesResponse\x12Y\n\nStreamStep\x12\".simulation.StepEnvironmentRequest\x1a#.simulation.StepEnvironmentResponse(\x01\x30\x01\x42\x32Z0github.com/jelech/rl_env_engine/proto/simulationb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10simulation.proto\x12\nsimulation\x1a\x1cgoogle/protobuf/struct.proto\"\x10\n\x0eGetInfoRequest\"{\n\x0fGetInfoResponse\x12\x11\n\tscenarios\x18\x01 \x03(\t\x12\x0f\n\x07\x65nv_ids\x18\x02 \x03(\t\x12%\n\x04info\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04name\x18\x05 \x01(\t\"e\n\x18\x43reateEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\x12\x10\n\x08scenario\x18\x02 \x01(\t\x12\'\n\x06\x63onfig\x18\x03 \x01(\x0b\x32\x17.google.protobuf.Struct\"=\n\x19\x43reateEnvironmentResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\")\n\x17ResetEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\"p\n\x18ResetEnvironmentResponse\x12-\n\x0cobservations\x18\x01 \x03(\x0b\x32\x17.simulation.Observation\x12%\n\x04info\x18\x02 \x01(\x0b\x32\x17.google.protobuf.Struct\"M\n\x16StepEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\x12#\n\x07\x61\x63tions\x18\x02 \x03(\x0b\x32\x12.simulation.Action\"\x8e\x01\n\x17StepEnvironmentResponse\x12-\n\x0cobservations\x18\x01 \x03(\x0b\x32\x17.simulation.Observation\x12\x0f\n\x07rewards\x18\x02 \x03(\x01\x12\x0c\n\x04\x64one\x18\x03 \x03(\x08\x12%\n\x04info\x18\x04 \x01(\x0b\x32\x17.google.protobuf.Struct\")\n\x17\x43loseEnvironmentRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\"<\n\x18\x43loseEnvironmentResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"F\n\x0bObservation\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\x01\x12)\n\x08metadata\x18\x02 \x01(\x0b\x32\x17.google.protobuf.Struct\"\x85\x02\n\x06\x41\x63tion\x12\x15\n\x0b\x66loat_value\x18\x01 \x01(\x01H\x00\x12\x13\n\tint_value\x18\x02 \x01(\x03H\x00\x12\x14\n\nbool_value\x18\x03 \x01(\x08H\x00\x12-\n\x0b\x66loat_array\x18\x04 \x01(\x0b\x32\x16.simulation.FloatArrayH\x00\x12)\n\tint_array\x18\x05 \x01(\x0b\x32\x14.simulation.IntArrayH\x00\x12+\n\nbool_array\x18\x06 \x01(\x0b\x32\x15.simulation.BoolArrayH\x00\x12\x16\n\x0cstring_value\x18\x07 \x01(\tH\x00\x12\x12\n\x08raw_data\x18\x08 \x01(\x0cH\x00\x42\x06\n\x04\x64\x61ta\"\x1c\n\nFloatArray\x12\x0e\n\x06values\x18\x01 \x03(\x01\"\x1a\n\x08IntArray\x12\x0e\n\x06values\x18\x01 \x03(\x03\"\x1b\n\tBoolArray\x12\x0e\n\x06values\x18\x01 \x03(\x08\"\"\n\x10GetSpacesRequest\x12\x0e\n\x06\x65nv_id\x18\x01 \x01(\t\"{\n\x11GetSpacesResponse\x12-\n\x0c\x61\x63tion_space\x18\x01 \x01(\x0b\x32\x17.simulation.ActionSpace\x12\x37\n\x11observation_space\x18\x02 \x01(\x0b\x32\x1c.simulation.ObservationSpace\"\x84\x01\n\x0b\x41\x63tionSpace\x12#\n\x04type\x18\x01 \x01(\x0e\x32\x15.simulation.SpaceType\x12\x0b\n\x03low\x18\x02 \x03(\x01\x12\x0c\n\x04high\x18\x03 \x03(\x01\x12\r\n\x05shape\x18\x04 \x03(\x05\x12\r\n\x05\x64type\x18\x05 \x01(\t\x12\x17\n\x0f\x64iscrete_values\x18\x06 \x03(\x01\"p\n\x10ObservationSpace\x12#\n\x04type\x18\x01 \x01(\x0e\x32\x15.simulation.SpaceType\x12\x0b\n\x03low\x18\x02 \x03(\x01\x12\x0c\n\x04high\x18\x03 \x03(\x01\x12\r\n\x05shape\x18\x04 \x03(\x05\x12\r\n\x05\x64type\x18\x05 \x01(\t*\\\n\tSpaceType\x12\x07\n\x03\x42OX\x10\x00\x12\x0c\n\x08\x44ISCRETE\x10\x01\x12\x12\n\x0eMULTI_DISCRETE\x10\x02\x12\x10\n\x0cMULTI_BINARY\x10\x03\x12\x12\n\x0e\x44ISCRETE_FLOAT\x10\x04\x32\xf8\x04\n\x11SimulationService\x12\x42\n\x07GetInfo\x12\x1a.simulation.GetInfoRequest\x1a\x1b.simulation.GetInfoResponse\x12`\n\x11\x43reateEnvironment\x12$.simulation.CreateEnvironmentRequest\x1a%.simulation.CreateEnvironmentResponse\x12]\n\x10ResetEnvironment\x12#.simulation.ResetEnvironmentRequest\x1a$.simulation.ResetEnvironmentResponse\x12Z\n\x0fStepEnvironment\x12\".simulation.StepEnvironmentRequest\x1a#.simulation.StepEnvironmentResponse\x12]\n\x10\x43loseEnvironment\x12#.simulation.CloseEnvironmentRequest\x1a$.simulation.CloseEnvironmentResponse\x12H\n\tGetSpaces\x12\x1c.simulation.GetSpacesRequest\x1a\x1d.simulation.GetSpacesResponse\x12Y\n\nStreamStep\x12\".simulation.StepEnvironmentRequest\x1a#.simulation.StepEnvironmentResponse(\x01\x30\x01\x42\x32Z0github.com/jelech/rl_env_engine/proto/simulationb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,66 +33,46 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'simulation_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z0github.com/jelech/rl_env_engine/proto/simulation'
-  _globals['_GETINFORESPONSE_INFOENTRY']._loaded_options = None
-  _globals['_GETINFORESPONSE_INFOENTRY']._serialized_options = b'8\001'
-  _globals['_CREATEENVIRONMENTREQUEST_CONFIGENTRY']._loaded_options = None
-  _globals['_CREATEENVIRONMENTREQUEST_CONFIGENTRY']._serialized_options = b'8\001'
-  _globals['_RESETENVIRONMENTRESPONSE_INFOENTRY']._loaded_options = None
-  _globals['_RESETENVIRONMENTRESPONSE_INFOENTRY']._serialized_options = b'8\001'
-  _globals['_STEPENVIRONMENTRESPONSE_INFOENTRY']._loaded_options = None
-  _globals['_STEPENVIRONMENTRESPONSE_INFOENTRY']._serialized_options = b'8\001'
-  _globals['_OBSERVATION_METADATAENTRY']._loaded_options = None
-  _globals['_OBSERVATION_METADATAENTRY']._serialized_options = b'8\001'
-  _globals['_SPACETYPE']._serialized_start=1993
-  _globals['_SPACETYPE']._serialized_end=2085
-  _globals['_GETINFOREQUEST']._serialized_start=32
-  _globals['_GETINFOREQUEST']._serialized_end=48
-  _globals['_GETINFORESPONSE']._serialized_start=51
-  _globals['_GETINFORESPONSE']._serialized_end=233
-  _globals['_GETINFORESPONSE_INFOENTRY']._serialized_start=190
-  _globals['_GETINFORESPONSE_INFOENTRY']._serialized_end=233
-  _globals['_CREATEENVIRONMENTREQUEST']._serialized_start=236
-  _globals['_CREATEENVIRONMENTREQUEST']._serialized_end=409
-  _globals['_CREATEENVIRONMENTREQUEST_CONFIGENTRY']._serialized_start=364
-  _globals['_CREATEENVIRONMENTREQUEST_CONFIGENTRY']._serialized_end=409
-  _globals['_CREATEENVIRONMENTRESPONSE']._serialized_start=411
-  _globals['_CREATEENVIRONMENTRESPONSE']._serialized_end=472
-  _globals['_RESETENVIRONMENTREQUEST']._serialized_start=474
-  _globals['_RESETENVIRONMENTREQUEST']._serialized_end=515
-  _globals['_RESETENVIRONMENTRESPONSE']._serialized_start=518
-  _globals['_RESETENVIRONMENTRESPONSE']._serialized_end=698
-  _globals['_RESETENVIRONMENTRESPONSE_INFOENTRY']._serialized_start=190
-  _globals['_RESETENVIRONMENTRESPONSE_INFOENTRY']._serialized_end=233
-  _globals['_STEPENVIRONMENTREQUEST']._serialized_start=700
-  _globals['_STEPENVIRONMENTREQUEST']._serialized_end=777
-  _globals['_STEPENVIRONMENTRESPONSE']._serialized_start=780
-  _globals['_STEPENVIRONMENTRESPONSE']._serialized_end=989
-  _globals['_STEPENVIRONMENTRESPONSE_INFOENTRY']._serialized_start=190
-  _globals['_STEPENVIRONMENTRESPONSE_INFOENTRY']._serialized_end=233
-  _globals['_CLOSEENVIRONMENTREQUEST']._serialized_start=991
-  _globals['_CLOSEENVIRONMENTREQUEST']._serialized_end=1032
-  _globals['_CLOSEENVIRONMENTRESPONSE']._serialized_start=1034
-  _globals['_CLOSEENVIRONMENTRESPONSE']._serialized_end=1094
-  _globals['_OBSERVATION']._serialized_start=1097
-  _globals['_OBSERVATION']._serialized_end=1230
-  _globals['_OBSERVATION_METADATAENTRY']._serialized_start=1183
-  _globals['_OBSERVATION_METADATAENTRY']._serialized_end=1230
-  _globals['_ACTION']._serialized_start=1233
-  _globals['_ACTION']._serialized_end=1494
-  _globals['_FLOATARRAY']._serialized_start=1496
-  _globals['_FLOATARRAY']._serialized_end=1524
-  _globals['_INTARRAY']._serialized_start=1526
-  _globals['_INTARRAY']._serialized_end=1552
-  _globals['_BOOLARRAY']._serialized_start=1554
-  _globals['_BOOLARRAY']._serialized_end=1581
-  _globals['_GETSPACESREQUEST']._serialized_start=1583
-  _globals['_GETSPACESREQUEST']._serialized_end=1617
-  _globals['_GETSPACESRESPONSE']._serialized_start=1619
-  _globals['_GETSPACESRESPONSE']._serialized_end=1742
-  _globals['_ACTIONSPACE']._serialized_start=1745
-  _globals['_ACTIONSPACE']._serialized_end=1877
-  _globals['_OBSERVATIONSPACE']._serialized_start=1879
-  _globals['_OBSERVATIONSPACE']._serialized_end=1991
-  _globals['_SIMULATIONSERVICE']._serialized_start=2088
-  _globals['_SIMULATIONSERVICE']._serialized_end=2720
+  _globals['_SPACETYPE']._serialized_start=1690
+  _globals['_SPACETYPE']._serialized_end=1782
+  _globals['_GETINFOREQUEST']._serialized_start=62
+  _globals['_GETINFOREQUEST']._serialized_end=78
+  _globals['_GETINFORESPONSE']._serialized_start=80
+  _globals['_GETINFORESPONSE']._serialized_end=203
+  _globals['_CREATEENVIRONMENTREQUEST']._serialized_start=205
+  _globals['_CREATEENVIRONMENTREQUEST']._serialized_end=306
+  _globals['_CREATEENVIRONMENTRESPONSE']._serialized_start=308
+  _globals['_CREATEENVIRONMENTRESPONSE']._serialized_end=369
+  _globals['_RESETENVIRONMENTREQUEST']._serialized_start=371
+  _globals['_RESETENVIRONMENTREQUEST']._serialized_end=412
+  _globals['_RESETENVIRONMENTRESPONSE']._serialized_start=414
+  _globals['_RESETENVIRONMENTRESPONSE']._serialized_end=526
+  _globals['_STEPENVIRONMENTREQUEST']._serialized_start=528
+  _globals['_STEPENVIRONMENTREQUEST']._serialized_end=605
+  _globals['_STEPENVIRONMENTRESPONSE']._serialized_start=608
+  _globals['_STEPENVIRONMENTRESPONSE']._serialized_end=750
+  _globals['_CLOSEENVIRONMENTREQUEST']._serialized_start=752
+  _globals['_CLOSEENVIRONMENTREQUEST']._serialized_end=793
+  _globals['_CLOSEENVIRONMENTRESPONSE']._serialized_start=795
+  _globals['_CLOSEENVIRONMENTRESPONSE']._serialized_end=855
+  _globals['_OBSERVATION']._serialized_start=857
+  _globals['_OBSERVATION']._serialized_end=927
+  _globals['_ACTION']._serialized_start=930
+  _globals['_ACTION']._serialized_end=1191
+  _globals['_FLOATARRAY']._serialized_start=1193
+  _globals['_FLOATARRAY']._serialized_end=1221
+  _globals['_INTARRAY']._serialized_start=1223
+  _globals['_INTARRAY']._serialized_end=1249
+  _globals['_BOOLARRAY']._serialized_start=1251
+  _globals['_BOOLARRAY']._serialized_end=1278
+  _globals['_GETSPACESREQUEST']._serialized_start=1280
+  _globals['_GETSPACESREQUEST']._serialized_end=1314
+  _globals['_GETSPACESRESPONSE']._serialized_start=1316
+  _globals['_GETSPACESRESPONSE']._serialized_end=1439
+  _globals['_ACTIONSPACE']._serialized_start=1442
+  _globals['_ACTIONSPACE']._serialized_end=1574
+  _globals['_OBSERVATIONSPACE']._serialized_start=1576
+  _globals['_OBSERVATIONSPACE']._serialized_end=1688
+  _globals['_SIMULATIONSERVICE']._serialized_start=1785
+  _globals['_SIMULATIONSERVICE']._serialized_end=2417
 # @@protoc_insertion_point(module_scope)

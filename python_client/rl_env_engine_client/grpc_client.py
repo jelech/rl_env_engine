@@ -2,6 +2,7 @@
 """
 gRPC客户端示例，用于与仿真服务器进行通信
 """
+import time
 import grpc
 
 
@@ -112,10 +113,8 @@ class SimulationGrpcClient:
         """
         try:
             # 创建SimpleAction
-            simple_action = simulation_pb2.SimpleAction(value=action_value)
-            action = simulation_pb2.Action(simple_action=simple_action)
-
-            request = simulation_pb2.StepEnvironmentRequest(env_id=env_id, action=action)
+            action = simulation_pb2.Action(float_value=action_value)
+            request = simulation_pb2.StepEnvironmentRequest(env_id=env_id, actions=[action])
             response = self.stub.StepEnvironment(request)
 
             observations = []
@@ -167,7 +166,7 @@ def demo_simple_simulation():
 
         # 2. 创建环境
         print("\n=== 创建环境 ===")
-        env_id = "test_simple_env"
+        env_id = f"test_simple_env_{time.time()}"
         config = {"max_steps": "100", "tolerance": "0.1"}
 
         create_result = client.create_environment(env_id, "simple", config)
