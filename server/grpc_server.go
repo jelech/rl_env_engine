@@ -12,6 +12,7 @@ import (
 	"github.com/jelech/rl_env_engine/scenarios/simple"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // GrpcServer implements the gRPC simulation service
@@ -75,16 +76,21 @@ func (s *GrpcServer) GetInfo(ctx context.Context, req *pb.GetInfoRequest) (*pb.G
 		envIDs = append(envIDs, envID)
 	}
 
-	info := map[string]string{
+	info := map[string]interface{}{
 		"total_scenarios":     fmt.Sprintf("%d", len(scenarios)),
 		"active_environments": fmt.Sprintf("%d", len(envIDs)),
 		"server_type":         "gRPC",
 	}
 
+	infoStruct, err := structpb.NewStruct(info)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create info struct: %v", err)
+	}
+
 	return &pb.GetInfoResponse{
 		Scenarios: scenarios,
 		EnvIds:    envIDs,
-		Info:      info,
+		Info:      infoStruct,
 		Version:   "1.0.0",
 		Name:      "Simulation gRPC Service",
 	}, nil
@@ -101,10 +107,7 @@ func (s *GrpcServer) CreateEnvironment(ctx context.Context, req *pb.CreateEnviro
 	}
 
 	// 创建配置
-	config := core.NewBaseConfig()
-	for key, value := range req.Config {
-		config.SetValue(key, value)
-	}
+	config := core.NewBaseConfig(req.Config.AsMap())
 
 	// 创建环境
 	env, err := s.engine.CreateEnvironment(req.Scenario, config)
@@ -140,25 +143,25 @@ func (s *GrpcServer) ResetEnvironment(ctx context.Context, req *pb.ResetEnvironm
 	// 转换观察为protobuf格式
 	protoObservations := make([]*pb.Observation, len(observations))
 	for i, obs := range observations {
-		metadata := make(map[string]string)
-		for k, v := range obs.GetMetadata() {
-			metadata[k] = fmt.Sprintf("%v", v)
+		metadataStruct, err := structpb.NewStruct(obs.GetMetadata())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create metadata struct for observation %d: %v", i, err)
 		}
 
 		protoObservations[i] = &pb.Observation{
 			Data:     obs.GetData(),
-			Metadata: metadata,
+			Metadata: metadataStruct,
 		}
 	}
 
-	info := make(map[string]string)
-	for k, v := range env.GetInfo() {
-		info[k] = fmt.Sprintf("%v", v)
+	infoStruct, err := structpb.NewStruct(env.GetInfo())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create info struct: %v", err)
 	}
 
 	return &pb.ResetEnvironmentResponse{
 		Observations: protoObservations,
-		Info:         info,
+		Info:         infoStruct,
 	}, nil
 }
 
@@ -186,27 +189,27 @@ func (s *GrpcServer) StepEnvironment(ctx context.Context, req *pb.StepEnvironmen
 	// 转换观察为protobuf格式
 	protoObservations := make([]*pb.Observation, len(observations))
 	for i, obs := range observations {
-		metadata := make(map[string]string)
-		for k, v := range obs.GetMetadata() {
-			metadata[k] = fmt.Sprintf("%v", v)
+		metadataStruct, err := structpb.NewStruct(obs.GetMetadata())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create metadata struct for observation %d: %v", i, err)
 		}
 
 		protoObservations[i] = &pb.Observation{
 			Data:     obs.GetData(),
-			Metadata: metadata,
+			Metadata: metadataStruct,
 		}
 	}
 
-	info := make(map[string]string)
-	for k, v := range env.GetInfo() {
-		info[k] = fmt.Sprintf("%v", v)
+	infoStruct, err := structpb.NewStruct(env.GetInfo())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create info struct: %v", err)
 	}
 
 	return &pb.StepEnvironmentResponse{
 		Observations: protoObservations,
 		Rewards:      rewards,
 		Done:         done,
-		Info:         info,
+		Info:         infoStruct,
 	}, nil
 }
 

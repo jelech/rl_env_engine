@@ -180,10 +180,7 @@ func (api *GymAPI) handleCreateEnv(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 创建配置
-	config := core.NewBaseConfig()
-	for key, value := range req.Config {
-		config.SetValue(key, value)
-	}
+	config := core.NewBaseConfig(req.Config)
 
 	// 创建环境
 	env, err := api.engine.CreateEnvironment(req.Scenario, config)

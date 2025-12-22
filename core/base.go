@@ -36,18 +36,14 @@ type BaseConfig struct {
 	values map[string]interface{}
 }
 
-func NewBaseConfig() *BaseConfig {
+func NewBaseConfig(values map[string]interface{}) *BaseConfig {
 	return &BaseConfig{
-		values: make(map[string]interface{}),
+		values: values,
 	}
 }
 
 func (c *BaseConfig) GetValue(key string) interface{} {
 	return c.values[key]
-}
-
-func (c *BaseConfig) SetValue(key string, value interface{}) {
-	c.values[key] = value
 }
 
 func (c *BaseConfig) Validate() error {

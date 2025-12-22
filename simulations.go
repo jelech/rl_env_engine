@@ -32,11 +32,7 @@ func NewSimulation(scenario string, config map[string]interface{}) (Simulation, 
 	registerBuiltinScenarios(engine)
 
 	// Convert config map to Config interface
-	cfg := core.NewBaseConfig()
-	for key, value := range config {
-		cfg.SetValue(key, value)
-	}
-
+	cfg := core.NewBaseConfig(config)
 	return engine.CreateEnvironment(scenario, cfg)
 }
 

@@ -61,7 +61,6 @@ type ActionCreator interface {
 // Config 定义配置接口
 type Config interface {
 	GetValue(key string) interface{}
-	SetValue(key string, value interface{})
 	Validate() error
 	Unmarshal(v interface{}) error
 }

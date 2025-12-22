@@ -7,6 +7,7 @@ import (
 
 	pb "github.com/jelech/rl_env_engine/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func main() {
@@ -34,13 +35,18 @@ func main() {
 	// 测试CreateEnvironment - 使用简单场景
 	log.Println("Testing CreateEnvironment with simple scenario...")
 	envID := "test_simple_env"
+	config, err := structpb.NewStruct(map[string]interface{}{
+		"max_steps": "50",
+		"tolerance": "0.5",
+	})
+	if err != nil {
+		log.Fatalf("Failed to create config struct: %v", err)
+	}
+
 	createResp, err := client.CreateEnvironment(ctx, &pb.CreateEnvironmentRequest{
 		EnvId:    envID,
 		Scenario: "simple",
-		Config: map[string]string{
-			"max_steps": "50",
-			"tolerance": "0.5",
-		},
+		Config:   config,
 	})
 	if err != nil {
 		log.Printf("CreateEnvironment failed: %v", err)

@@ -44,7 +44,7 @@ func CreateEnv(scenarioName string, configJson string) int {
 	}
 
 	// 创建环境
-	env, err := s.CreateEnvironment(core.NewGenericConfig(cfgMap))
+	env, err := s.CreateEnvironment(core.NewBaseConfig(cfgMap))
 	if err != nil {
 		return -3 // 创建失败
 	}
