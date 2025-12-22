@@ -63,6 +63,7 @@ type Config interface {
 	GetValue(key string) interface{}
 	SetValue(key string, value interface{})
 	Validate() error
+	Unmarshal(v interface{}) error
 }
 
 // DataLoader 定义数据加载器接口

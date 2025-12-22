@@ -3,6 +3,8 @@ package core
 import (
 	"context"
 	"fmt"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 // BaseObservation 基础观察实现
@@ -50,6 +52,26 @@ func (c *BaseConfig) SetValue(key string, value interface{}) {
 
 func (c *BaseConfig) Validate() error {
 	// 基础配置验证，子类可以重写
+	return nil
+}
+
+func (c *BaseConfig) Unmarshal(v interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		Metadata:         nil,
+		Result:           v,
+		TagName:          "json", // 支持使用 json tag
+		WeaklyTypedInput: true,   // 允许弱类型转换
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return fmt.Errorf("failed to create mapstructure decoder: %w", err)
+	}
+
+	if err := decoder.Decode(c.values); err != nil {
+		return fmt.Errorf("failed to decode config into struct: %w", err)
+	}
+
 	return nil
 }
 

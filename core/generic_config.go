@@ -15,4 +15,3 @@ func NewGenericConfig(values map[string]interface{}) *GenericConfig {
 	}
 	return cfg
 }
-
