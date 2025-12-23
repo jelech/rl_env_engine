@@ -9,12 +9,15 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 from typing import Dict, Any, Optional, Union, Tuple
+from google.protobuf.json_format import MessageToDict
+import sys
 
-# 优先尝试包内相对导入（安装后）
 try:
-    from . import simulation_pb2, simulation_pb2_grpc  # type: ignore
+    from . import simulation_pb2
+
+    sys.modules["simulation_pb2"] = simulation_pb2
+    from . import simulation_pb2_grpc
 except Exception:  # pragma: no cover
-    # 回退：兼容直接在源码目录运行（未通过pip安装时）
     try:
         import simulation_pb2  # type: ignore
         import simulation_pb2_grpc  # type: ignore
@@ -108,8 +111,8 @@ class GrpcEnv(gym.Env):
             request = simulation_pb2.GetSpacesRequest(env_id=self.env_id)
             response = self.client.GetSpaces(request)
 
-            self.action_space = self._convert_proto_space_to_gym(response.action_space)
-            self.observation_space = self._convert_proto_space_to_gym(response.observation_space)
+            self.action_space = self._convert_proto_space_to_gym(response.action_space, is_action_space=True)
+            self.observation_space = self._convert_proto_space_to_gym(response.observation_space, is_action_space=False)
 
             self.verbose_print(f"Scenario '{self.scenario}' loaded:")
             self.verbose_print(f"  Action space: {self.action_space}")
@@ -125,15 +128,71 @@ class GrpcEnv(gym.Env):
             self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(1,), dtype=np.float32)
             self._spaces_loaded = False
 
-    def _convert_proto_space_to_gym(self, proto_space) -> gym.Space:
+    def _convert_proto_space_to_gym_box(self, proto_space, is_action_space: bool = False) -> gym.Space:
+        shape = tuple(proto_space.shape) if proto_space.shape else (1,)
+        # 如果 low/high 为空，根据情况使用默认值
+        if not proto_space.low or len(proto_space.low) == 0:
+            # 对于动作空间，如果有 discrete_values，使用其最小值；否则使用合理默认值
+            if is_action_space and hasattr(proto_space, "discrete_values") and proto_space.discrete_values:
+                low_val = float(min(proto_space.discrete_values))
+            elif is_action_space:
+                # 动作空间使用有限默认值，SB3 要求有限边界
+                low_val = -100000.0
+            else:
+                # 观察空间可以使用 -inf
+                low_val = -np.inf
+        elif len(proto_space.low) == 1:
+            low_val = float(proto_space.low[0])
+        else:
+            low_arr = np.array(proto_space.low, dtype=np.float32)
+            # 如果数组长度与 shape 不匹配，使用第一个值作为标量
+            if len(low_arr) != shape[0] if len(shape) > 0 else 1:
+                low_val = float(low_arr[0])
+            else:
+                return spaces.Box(
+                    low=low_arr,
+                    high=np.array(proto_space.high, dtype=np.float32),
+                    shape=shape,
+                    dtype=getattr(np, proto_space.dtype) if proto_space.dtype else np.float32,
+                )
+
+        if not proto_space.high or len(proto_space.high) == 0:
+            # 对于动作空间，如果有 discrete_values，使用其最大值；否则使用合理默认值
+            if is_action_space and hasattr(proto_space, "discrete_values") and proto_space.discrete_values:
+                high_val = float(max(proto_space.discrete_values))
+            elif is_action_space:
+                # 动作空间使用有限默认值，SB3 要求有限边界
+                high_val = 100000.0
+            else:
+                # 观察空间可以使用 +inf
+                high_val = np.inf
+        elif len(proto_space.high) == 1:
+            high_val = float(proto_space.high[0])
+        else:
+            high_arr = np.array(proto_space.high, dtype=np.float32)
+            # 如果数组长度与 shape 不匹配，使用第一个值作为标量
+            if len(high_arr) != shape[0] if len(shape) > 0 else 1:
+                high_val = float(high_arr[0])
+            else:
+                return spaces.Box(
+                    low=np.array(proto_space.low, dtype=np.float32),
+                    high=high_arr,
+                    shape=shape,
+                    dtype=getattr(np, proto_space.dtype) if proto_space.dtype else np.float32,
+                )
+
+        # 使用标量值，gymnasium 会自动广播到整个 shape
+        return spaces.Box(
+            low=low_val,
+            high=high_val,
+            shape=shape,
+            dtype=getattr(np, proto_space.dtype) if proto_space.dtype else np.float32,
+        )
+
+    def _convert_proto_space_to_gym(self, proto_space, is_action_space: bool = False) -> gym.Space:
         """将协议空间定义转换为gymnasium空间"""
         if proto_space.type == 0:  # BOX type
-            return spaces.Box(
-                low=np.array(proto_space.low, dtype=np.float32),
-                high=np.array(proto_space.high, dtype=np.float32),
-                shape=tuple(proto_space.shape),
-                dtype=getattr(np, proto_space.dtype) if proto_space.dtype else np.float32,
-            )
+            return self._convert_proto_space_to_gym_box(proto_space, is_action_space)
         elif proto_space.type == 1:  # DISCRETE type
             # 对于离散空间，使用shape[0]作为n
             n = int(proto_space.shape[0]) if proto_space.shape else 2
@@ -152,7 +211,7 @@ class GrpcEnv(gym.Env):
             return
 
         # 将配置转换为字符串字典（gRPC要求）
-        config_str = {k: str(v) for k, v in self.config.items()}
+        config_str = {k: v for k, v in self.config.items()}
         request = simulation_pb2.CreateEnvironmentRequest(env_id=self.env_id, scenario=self.scenario, config=config_str)
         response = self.client.CreateEnvironment(request)
         if not response.success:
@@ -185,7 +244,7 @@ class GrpcEnv(gym.Env):
         observation = np.array([float(x) for x in obs_data], dtype=np.float32)
 
         # 构建info字典，包含服务器返回的所有信息
-        info = dict(response.info)
+        info = MessageToDict(response.info) if response.info else {}
 
         # 添加一些通用信息
         if len(observation) >= 1:
@@ -212,7 +271,7 @@ class GrpcEnv(gym.Env):
         truncated = False  # 可以根据需要扩展
 
         # 构建info字典
-        info = dict(response.info)
+        info = MessageToDict(response.info) if response.info else {}
         info["action_taken"] = action
         info["num_actions"] = len(grpc_actions)
 

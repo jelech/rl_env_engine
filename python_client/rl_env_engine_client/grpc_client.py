@@ -4,6 +4,7 @@ gRPC客户端示例，用于与仿真服务器进行通信
 """
 import time
 import grpc
+from google.protobuf.json_format import MessageToDict
 
 
 try:
@@ -52,10 +53,11 @@ class SimulationGrpcClient:
         try:
             request = simulation_pb2.GetInfoRequest()
             response = self.stub.GetInfo(request)
+            info_dict = MessageToDict(response.info) if response.info else {}
             return {
                 "scenarios": list(response.scenarios),
                 "env_ids": list(response.env_ids),
-                "info": dict(response.info),
+                "info": info_dict,
                 "version": response.version,
                 "name": response.name,
             }
@@ -96,9 +98,11 @@ class SimulationGrpcClient:
 
             observations = []
             for obs in response.observations:
-                observations.append({"data": list(obs.data), "metadata": dict(obs.metadata)})
+                metadata_dict = MessageToDict(obs.metadata) if obs.metadata else {}
+                observations.append({"data": list(obs.data), "metadata": metadata_dict})
 
-            return {"observations": observations, "info": dict(response.info)}
+            info_dict = MessageToDict(response.info) if response.info else {}
+            return {"observations": observations, "info": info_dict}
         except grpc.RpcError as e:
             print(f"gRPC error in reset_environment: {e}")
             return None
@@ -119,13 +123,15 @@ class SimulationGrpcClient:
 
             observations = []
             for obs in response.observations:
-                observations.append({"data": list(obs.data), "metadata": dict(obs.metadata)})
+                metadata_dict = MessageToDict(obs.metadata) if obs.metadata else {}
+                observations.append({"data": list(obs.data), "metadata": metadata_dict})
 
+            info_dict = MessageToDict(response.info) if response.info else {}
             return {
                 "observations": observations,
                 "rewards": list(response.rewards),
                 "done": list(response.done),
-                "info": dict(response.info),
+                "info": info_dict,
             }
         except grpc.RpcError as e:
             print(f"gRPC error in step_environment: {e}")
