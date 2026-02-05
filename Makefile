@@ -1,269 +1,199 @@
-# Makefile for Simulations Framework
-
+# Makefile for RL Env Engine
+# A unified build system for Go server and Python client SDK
 
 .PHONY: help
 help:
-	@echo "可用的make命令:"
-	@echo "help             : 显示此帮助信息"
-	@echo "---------------- 构建 ----------------"
-	@echo "build            : 构建所有示例 (HTTP / gRPC / Dual)"
-	@echo "build-server     : 仅构建 HTTP 服务器示例"
-	@echo "build-grpc       : 仅构建 gRPC 服务器示例"
-	@echo "build-dual       : 构建双协议服务器示例"
-	@echo "build-grpc-test  : 构建 gRPC 测试客户端示例"
-	@echo "build-simple-test: 构建简单场景测试示例"
-	@echo "build-grpc-all   : 构建所有 gRPC 相关示例"
-	@echo "all              : 清理 + 格式化 + 静态检查 + 构建"
-	@echo "---------------- 运行 ----------------"
-	@echo "run-server       : 运行 HTTP 服务器"
-	@echo "run-grpc         : 运行 gRPC 服务器"
-	@echo "run-dual         : 运行双协议服务器"
-	@echo "server-bg        : 后台启动 HTTP 服务器 (输出到 server.log)"
-	@echo "server-stop      : 停止后台运行的 HTTP 服务器"
-	@echo "dev              : 开发模式运行 HTTP 服务器"
-	@echo "dev-grpc         : 开发模式运行 gRPC 服务器(使用已构建的二进制)"
-	@echo "---------------- 演示流程 --------------"
-	@echo "demo-http        : 演示 HTTP 启动/测试/停止流程"
-	@echo "demo-grpc        : 演示 gRPC 启动/测试/停止流程"
-	@echo "demo-dual        : 演示 双协议 启动/测试/停止流程"
-	@echo "---------------- 测试 ----------------"
-	@echo "test             : 运行 Go 测试"
-	@echo "test-python      : 测试 Python HTTP API 客户端"
-	@echo "test-grpc-python : 测试 Python gRPC 客户端"
-	@echo "test-grpc-quick  : 快速构建并测试 gRPC (Go)"
-	@echo "test-python-sb3  : 启动 gRPC 并运行 Python SB3 测试"
-	@echo "---------------- 代码质量 --------------"
-	@echo "fmt              : Go 代码格式化"
-	@echo "vet              : 运行 go vet"
-	@echo "lint             : 运行 golangci-lint"
-	@echo "clean            : 清理构建产物"
-	@echo "status           : 显示项目状态 (Go 版本 / 模块 / 文件)"
-	@echo "---------------- 依赖与生成 ------------"
-	@echo "deps             : 安装 Go 依赖 (download + tidy)"
-	@echo "python-deps      : 安装 Python HTTP 客户端依赖"
-	@echo "python-grpc-deps : 安装 Python gRPC 依赖"
-	@echo "python-sb3-setup : 安装 Python SB3 相关依赖"
-	@echo "proto            : 生成 Go Protobuf 代码"
-	@echo "proto-python     : 生成 Python Protobuf 代码"
-	@echo "dev-setup        : 一次性完成开发环境初始化 (Go/Python/Proto)"
+	@echo "RL Env Engine - Build System"
+	@echo ""
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "=== Proto Generation ==="
+	@echo "  proto              Generate protobuf code for Go and Python"
+	@echo ""
+	@echo "=== Go Commands ==="
+	@echo "  build-go           Build Go server"
+	@echo "  run-server         Run gRPC server"
+	@echo "  run-http           Run HTTP server"
+	@echo "  run-dual           Run both HTTP and gRPC servers"
+	@echo "  test-go            Run Go tests"
+	@echo "  fmt-go             Format Go code"
+	@echo "  vet-go             Run go vet"
+	@echo "  lint-go            Run golangci-lint"
+	@echo "  deps-go            Install Go dependencies"
+	@echo ""
+	@echo "=== Python Commands ==="
+	@echo "  install-python     Install Python package in development mode"
+	@echo "  build-python       Build Python wheel"
+	@echo "  test-python        Run Python tests"
+	@echo "  fmt-python         Format Python code"
+	@echo "  lint-python        Lint Python code"
+	@echo "  deps-python        Install Python dependencies"
+	@echo ""
+	@echo "=== All Languages ==="
+	@echo "  build              Build everything"
+	@echo "  test               Run all tests"
+	@echo "  clean              Clean build artifacts"
+	@echo "  dev-setup          Set up development environment"
+	@echo ""
+	@echo "=== Docker ==="
+	@echo "  docker-build-go    Build Go Docker image"
+	@echo "  docker-build-py    Build Python Docker image"
 
-# 构建示例程序
-build:
-	@echo "Building server example..."
-	go build -o bin/server_example examples/server/main.go
-	@echo "Building gRPC server example..."
-	go build -o bin/grpc_server_example examples/grpc_server/main.go
-	@echo "Building dual server example..."
-	go build -o bin/dual_server_example examples/dual_server/main.go
+# ==============================================================================
+# Proto Generation
+# ==============================================================================
 
-
-# 构建服务器示例
-build-server:
-	@echo "Building server example..."
-	go build -o bin/server_example examples/server/main.go
-
-# 构建gRPC服务器示例
-build-grpc:
-	@echo "Building gRPC server example..."
-	go build -o bin/grpc_server_example examples/grpc_server/main.go
-
-# 构建双服务器示例
-build-dual:
-	@echo "Building dual server example..."
-	go build -o bin/dual_server_example examples/dual_server/main.go
-
-# 运行测试
-test:
-	@echo "Running tests..."
-	go test ./...
-
-# 清理构建文件
-clean:
-	@echo "Cleaning..."
-	rm -rf bin/
-	go clean
-
-
-# 运行服务器示例
-run-server:
-	@echo "Starting HTTP simulation server..."
-	go run examples/server/main.go
-
-# 运行gRPC服务器示例
-run-grpc:
-	@echo "Starting gRPC simulation server..."
-	go run examples/grpc_server/main.go
-
-# 运行双服务器示例（HTTP + gRPC）
-run-dual:
-	@echo "Starting dual simulation servers (HTTP + gRPC)..."
-	go run examples/dual_server/main.go
-
-# 运行服务器（后台模式）
-server-bg:
-	@echo "Starting simulation server in background..."
-	nohup go run examples/server/main.go > server.log 2>&1 &
-	@echo "Server started in background. Check server.log for output."
-
-# 停止后台服务器
-server-stop:
-	@echo "Stopping background server..."
-	pkill -f "examples/server/main.go" || echo "No server process found"
-
-# 生成protobuf文件
+.PHONY: proto
 proto:
-	@echo "Generating protobuf files..."
-	./generate_proto.sh
+	@echo "Generating protobuf code..."
+	./scripts/gen_proto.sh
 
-# 生成Python protobuf文件
-proto-python:
-	@echo "Generating Python protobuf files..."
-	./generate_python_proto.sh
+# ==============================================================================
+# Go Commands
+# ==============================================================================
 
-# 测试Python API连接
-test-python:
-	@echo "Testing Python HTTP API connection..."
-	cd python_client && python test_api.py
+GO_MODULE := github.com/jelech/rl_env_engine/go
+GO_DIR := ./go
+GO_BIN_DIR := ./bin
 
-# 测试Python gRPC连接
-test-grpc-python:
-	@echo "Testing Python gRPC connection..."
-	cd python_client && python grpc_client.py
+.PHONY: build-go
+build-go:
+	@echo "Building Go server..."
+	@mkdir -p $(GO_BIN_DIR)
+	cd $(GO_DIR) && go build -o ../$(GO_BIN_DIR)/server ./cmd/server
 
-# 代码格式化
-fmt:
-	@echo "Formatting code..."
-	go fmt ./...
+.PHONY: run-server
+run-server:
+	@echo "Starting gRPC server..."
+	cd $(GO_DIR) && go run ./cmd/server
 
-# 静态分析
-vet:
+.PHONY: run-http
+run-http:
+	@echo "Starting HTTP server..."
+	cd $(GO_DIR) && go run ./cmd/http-server 2>/dev/null || echo "HTTP server not implemented yet"
+
+.PHONY: run-dual
+run-dual:
+	@echo "Starting dual servers (HTTP + gRPC)..."
+	cd $(GO_DIR) && go run ./cmd/dual-server 2>/dev/null || echo "Dual server not implemented yet"
+
+.PHONY: test-go
+test-go:
+	@echo "Running Go tests..."
+	cd $(GO_DIR) && go test ./...
+
+.PHONY: fmt-go
+fmt-go:
+	@echo "Formatting Go code..."
+	cd $(GO_DIR) && go fmt ./...
+
+.PHONY: vet-go
+vet-go:
 	@echo "Running go vet..."
-	go vet ./core/... ./scenarios/... ./server/... ./examples/...
+	cd $(GO_DIR) && go vet ./...
 
-# 代码检查
-lint:
+.PHONY: lint-go
+lint-go:
 	@echo "Running golangci-lint..."
-	golangci-lint run
+	cd $(GO_DIR) && golangci-lint run
 
-# 安装依赖
-deps:
-	@echo "Installing dependencies..."
-	go mod download
-	go mod tidy
+.PHONY: deps-go
+deps-go:
+	@echo "Installing Go dependencies..."
+	cd $(GO_DIR) && go mod download && go mod tidy
 
-# 安装Python依赖
-python-deps:
+# ==============================================================================
+# Python Commands
+# ==============================================================================
+
+PYTHON_DIR := ./python
+
+.PHONY: install-python
+install-python:
+	@echo "Installing Python package in development mode..."
+	pip install -e "$(PYTHON_DIR)[dev]"
+
+.PHONY: build-python
+build-python:
+	@echo "Building Python wheel..."
+	cd $(PYTHON_DIR) && python -m build
+
+.PHONY: test-python
+test-python:
+	@echo "Running Python tests..."
+	cd $(PYTHON_DIR) && pytest
+
+.PHONY: fmt-python
+fmt-python:
+	@echo "Formatting Python code..."
+	cd $(PYTHON_DIR) && black src && isort src
+
+.PHONY: lint-python
+lint-python:
+	@echo "Linting Python code..."
+	cd $(PYTHON_DIR) && ruff check src
+
+.PHONY: deps-python
+deps-python:
 	@echo "Installing Python dependencies..."
-	cd python_client && pip install -r requirements.txt
+	pip install -e "$(PYTHON_DIR)[dev,rl]"
 
-# 安装Python gRPC依赖
-python-grpc-deps:
-	@echo "Installing Python gRPC dependencies..."
-	cd python_client && pip install -r requirements_grpc.txt
+# ==============================================================================
+# Combined Commands
+# ==============================================================================
 
-# 创建构建目录
-bin:
-	mkdir -p bin
+.PHONY: build
+build: proto build-go build-python
+	@echo "Build complete!"
 
-# 完整构建
-all: clean fmt vet bin build
-	@echo "Build completed successfully!"
+.PHONY: test
+test: test-go test-python
+	@echo "All tests passed!"
 
-# 开发环境设置
-dev-setup: deps python-deps python-grpc-deps proto proto-python
-	@echo "Development environment setup completed!"
+.PHONY: clean
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -rf $(GO_BIN_DIR)
+	rm -rf $(PYTHON_DIR)/dist
+	rm -rf $(PYTHON_DIR)/build
+	rm -rf $(PYTHON_DIR)/*.egg-info
+	rm -rf $(PYTHON_DIR)/src/*.egg-info
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+	cd $(GO_DIR) && go clean 2>/dev/null || true
+	@echo "Clean complete!"
 
-# 演示HTTP API流程
-demo-http: build-server
-	@echo "Starting HTTP API demo..."
-	@echo "1. Starting HTTP server in background..."
-	@make server-bg
-	@sleep 3
-	@echo "2. Testing HTTP API connection..."
-	@make test-python
-	@echo "3. Stopping server..."
-	@make server-stop
-	@echo "HTTP API demo completed!"
+.PHONY: dev-setup
+dev-setup: deps-go deps-python proto
+	@echo "Development environment setup complete!"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Run 'make run-server' to start the gRPC server"
+	@echo "  2. In another terminal, run Python client:"
+	@echo "     python -c 'from rl_env_engine.client import GrpcEnv; print(\"SDK loaded!\")'"
 
-# 演示gRPC API流程
-demo-grpc: build-grpc
-	@echo "Starting gRPC API demo..."
-	@echo "1. Starting gRPC server in background..."
-	nohup go run examples/grpc_server/main.go > grpc_server.log 2>&1 &
-	@sleep 3
-	@echo "2. Testing gRPC API connection..."
-	@make test-grpc-python
-	@echo "3. Stopping gRPC server..."
-	pkill -f "examples/grpc_server/main.go" || echo "No gRPC server process found"
-	@echo "gRPC API demo completed!"
+# ==============================================================================
+# Docker Commands
+# ==============================================================================
 
-# 演示双服务器流程
-demo-dual: build-dual
-	@echo "Starting dual servers demo..."
-	@echo "1. Starting both HTTP and gRPC servers in background..."
-	nohup go run examples/dual_server/main.go > dual_server.log 2>&1 &
-	@sleep 3
-	@echo "2. Testing HTTP API connection..."
-	@make test-python
-	@echo "3. Testing gRPC API connection..."
-	@make test-grpc-python
-	@echo "4. Stopping servers..."
-	pkill -f "examples/dual_server/main.go" || echo "No dual server process found"
-	@echo "Dual servers demo completed!"
+DOCKER_REGISTRY ?= 
+DOCKER_TAG ?= latest
 
-# 开发模式：启动服务器并测试
-dev: run-server
+.PHONY: docker-build-go
+docker-build-go:
+	@echo "Building Go Docker image..."
+	docker build -f Dockerfile.go -t $(DOCKER_REGISTRY)rl-env-engine-server:$(DOCKER_TAG) .
 
-# 开发模式：启动gRPC服务器进行SB3开发
-dev-grpc: build-grpc
-	@echo "Starting gRPC server for SB3 development..."
-	./bin/grpc_server_example
+.PHONY: docker-build-py
+docker-build-py:
+	@echo "Building Python Docker image..."
+	docker build -f Dockerfile.py -t $(DOCKER_REGISTRY)rl-env-engine-python:$(DOCKER_TAG) .
 
-# 快速测试：构建并测试gRPC环境
-test-grpc-quick: build-grpc build-grpc-test
-	@echo "Starting gRPC server in background..."
-	@nohup ./bin/grpc_server_example > grpc_server.log 2>&1 &
-	@sleep 3
-	@echo "Testing gRPC environment..."
-	@./bin/grpc_test_example
-	@echo "Stopping gRPC server..."
-	@pkill -f grpc_server_example || echo "No gRPC server process found"
-	@echo "gRPC test completed!"
+# ==============================================================================
+# Legacy Commands (for backward compatibility during migration)
+# ==============================================================================
 
-# 构建所有gRPC相关示例
-build-grpc-all: build-grpc build-grpc-test build-simple-test
-	@echo "All gRPC examples built successfully!"
-
-# 构建gRPC测试客户端
-build-grpc-test:
-	@echo "Building gRPC test client..."
-	go build -o bin/grpc_test_example examples/grpc_test/main.go
-
-# 构建简单场景测试
-build-simple-test:
-	@echo "Building simple scenario test..."
-	go build -o bin/simple_test_example examples/simple_test/main.go
-
-# Python SB3相关命令
-python-sb3-setup: proto-python python-grpc-deps
-	@echo "Setting up Python SB3 environment..."
-	@echo "Installing additional SB3 dependencies..."
-	cd python_client && pip install stable-baselines3[extra] gymnasium matplotlib tensorboard
-
-# 测试Python SB3环境
-test-python-sb3: build-grpc
-	@echo "Starting gRPC server for Python SB3 test..."
-	@nohup ./bin/grpc_server_example > grpc_server.log 2>&1 &
-	@sleep 3
-	@echo "Running Python SB3 environment test..."
-	cd python_client && python comprehensive_test.py
-	@echo "Stopping gRPC server..."
-	@pkill -f grpc_server_example || echo "No gRPC server process found"
-
-# 查看项目状态
-status:
-	@echo "Project status:"
-	@echo "Go version: $(shell go version)"
-	@echo "Module: $(shell head -1 go.mod)"
-	@echo "Files structure:"
-	@find . -name "*.go" -not -path "./.git/*" | sort
+.PHONY: proto-old
+proto-old:
+	@echo "Using legacy proto generation..."
+	./gen_grpc.sh 2>/dev/null || echo "Legacy script not found, use 'make proto' instead"

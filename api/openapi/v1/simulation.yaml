@@ -1,0 +1,515 @@
+openapi: 3.0.0
+info:
+  title: RL Env Engine HTTP API
+  description: |
+    HTTP API for RL Env Engine simulation environments.
+    
+    支持两种使用模式：
+    1. **同步模式**: 使用 /step 接口同步执行
+    2. **异步模式**: 使用 /step/submit 提交任务，/step/result 获取结果
+    
+    支持服务发现：通过 /ips 接口获取所有可用的 Worker 地址
+  version: 1.1.0
+servers:
+  - url: http://localhost:8000
+    description: Python HTTP Server
+  - url: http://localhost:9090
+    description: Go HTTP Server
+
+tags:
+  - name: Discovery
+    description: 服务发现相关接口
+  - name: Session
+    description: 会话管理接口
+  - name: Environment
+    description: 环境操作接口
+  - name: Async
+    description: 异步任务接口
+
+paths:
+  /:
+    get:
+      summary: API Information
+      description: Get information about the API
+      tags: [Discovery]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  version:
+                    type: string
+                  description:
+                    type: string
+                  scenarios:
+                    type: array
+                    items:
+                      type: string
+                  endpoints:
+                    type: object
+                    additionalProperties:
+                      type: string
+
+  /ips:
+    get:
+      summary: Get Available Workers
+      description: 获取所有存活的 Worker 地址（用于服务发现和负载均衡）
+      tags: [Discovery]
+      responses:
+        "200":
+          description: Worker 列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ips:
+                    type: array
+                    items:
+                      type: string
+                    description: Worker 地址列表 (格式: host:port)
+                    example: ["192.168.1.10:8000", "192.168.1.11:8000"]
+
+  /info:
+    get:
+      summary: Environment Information
+      description: Get information about available scenarios and active environments
+      tags: [Discovery]
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfoResponse"
+
+  /create:
+    post:
+      summary: Create Session/Environment
+      description: |
+        创建新的会话/环境。
+        
+        支持两种模式：
+        1. **简单模式**: 只指定 scenario 和 config
+        2. **多日期模式**: 额外指定 dates 数据（用于批量仿真）
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSessionRequest"
+      responses:
+        "200":
+          description: Session/Environment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSessionResponse"
+        "400":
+          description: Invalid request (unknown scenario, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reset:
+    post:
+      summary: Reset Environment
+      description: Reset an existing environment to its initial state
+      tags: [Environment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetRequest"
+      responses:
+        "200":
+          description: Environment reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResetResponse"
+        "404":
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /step:
+    post:
+      summary: Step Environment (Sync)
+      description: 同步执行一步仿真，适用于快速执行的场景
+      tags: [Environment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StepRequest"
+      responses:
+        "200":
+          description: Step successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResponse"
+        "404":
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /step/submit:
+    post:
+      summary: Submit Async Step Task
+      description: |
+        提交异步步进任务，适用于长时间运行的仿真。
+        
+        返回 task_id，使用 /step/result 获取结果。
+      tags: [Async]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                session_id:
+                  type: string
+                  description: 会话ID
+                action_tensor:
+                  type: string
+                  format: binary
+                  description: 序列化的动作数据 (torch.save 或 pickle)
+              required:
+                - session_id
+                - action_tensor
+      responses:
+        "200":
+          description: Task submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: submitted
+                  task_id:
+                    type: string
+                    description: 任务ID，用于查询结果
+                  date:
+                    type: string
+                    description: 任务处理的日期（如果action中包含）
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /step/result:
+    get:
+      summary: Get Async Step Result
+      description: 获取异步步进任务的结果
+      tags: [Async]
+      parameters:
+        - in: query
+          name: task_id
+          schema:
+            type: string
+          required: true
+          description: 任务ID
+      responses:
+        "200":
+          description: Task result
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [running]
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [failed]
+                      error:
+                        type: string
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [completed]
+                      result:
+                        type: object
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: 序列化的结果 (当结果是 tensor 时)
+        "404":
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/step:
+    post:
+      summary: Step Environment (Binary/High Performance)
+      description: 使用二进制数据执行一步仿真，用于高性能场景
+      tags: [Environment]
+      parameters:
+        - in: header
+          name: X-Env-ID
+          schema:
+            type: string
+          required: true
+          description: ID of the environment
+        - in: header
+          name: X-Data-Encoding
+          schema:
+            type: string
+            enum: [raw-bytes, raw-float32, json]
+          required: false
+          description: Encoding format of the request body
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+              description: Raw float32 array of action values
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StepRequest"
+      responses:
+        "200":
+          description: Step successful
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: Raw float32 array [obs_len, obs_data..., reward_len, reward_data..., done_byte]
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResponse"
+        "404":
+          description: Environment not found
+
+  /close:
+    post:
+      summary: Close Session/Environment
+      description: 关闭会话并清理资源
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                env_id:
+                  type: string
+              required:
+                - env_id
+      responses:
+        "200":
+          description: Environment closed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        "404":
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    InfoResponse:
+      type: object
+      properties:
+        scenarios:
+          type: array
+          items:
+            type: string
+          description: 可用的场景列表
+        env_ids:
+          type: array
+          items:
+            type: string
+          description: 活跃的环境/会话ID列表
+        sessions:
+          type: array
+          items:
+            type: string
+          description: 活跃的会话ID列表 (Python Server)
+        active_sessions:
+          type: integer
+          description: 活跃会话数量 (Python Server)
+        info:
+          type: object
+          additionalProperties: true
+
+    CreateSessionRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: 会话ID
+        scenario:
+          type: string
+          description: 场景名称
+        config:
+          type: object
+          additionalProperties: true
+          description: 环境配置
+        dates:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string
+          description: |
+            多日期数据 (可选)
+            格式: {date: {file_name: base64_content}}
+      required:
+        - session_id
+        - scenario
+
+    CreateSessionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: created
+        session_id:
+          type: string
+        dates:
+          type: array
+          items:
+            type: string
+          description: 包含的日期列表
+
+    # 兼容旧版 Go Server 的请求格式
+    CreateEnvRequest:
+      type: object
+      properties:
+        env_id:
+          type: string
+        scenario:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+      required:
+        - env_id
+        - scenario
+
+    CreateEnvResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    ResetRequest:
+      type: object
+      properties:
+        env_id:
+          type: string
+          description: 环境ID (Go Server)
+        session_id:
+          type: string
+          description: 会话ID (Python Server)
+        date:
+          type: string
+          description: 指定日期 (可选，用于多日期场景)
+
+    ResetResponse:
+      type: object
+      properties:
+        observation:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: float
+        info:
+          type: object
+          additionalProperties: true
+
+    StepRequest:
+      type: object
+      properties:
+        env_id:
+          type: string
+          description: 环境ID (Go Server)
+        session_id:
+          type: string
+          description: 会话ID (Python Server)
+        action:
+          type: object
+          additionalProperties: true
+          description: 动作数据 (格式取决于场景)
+      required:
+        - action
+
+    StepResponse:
+      type: object
+      properties:
+        observation:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: float
+        reward:
+          type: array
+          items:
+            type: number
+            format: float
+        done:
+          type: array
+          items:
+            type: boolean
+        info:
+          type: object
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        message:
+          type: string
+        code:
+          type: integer

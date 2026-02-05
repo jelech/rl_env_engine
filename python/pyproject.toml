@@ -1,0 +1,113 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rl-env-engine"
+version = "0.3.0"
+description = "Python SDK for RL Env Engine - Client and Server SDK for reinforcement learning environments"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+authors = [
+  { name = "jelech" }
+]
+keywords = ["reinforcement-learning", "grpc", "gymnasium", "stable-baselines3", "rl", "simulation"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+
+# 基础运行依赖 (Client SDK)
+dependencies = [
+  "numpy>=1.21.0",
+  "grpcio>=1.50.0",
+  "protobuf>=3.19.0",
+  "gymnasium>=0.28.0",
+  "requests>=2.25.0",
+]
+
+[project.optional-dependencies]
+# Server SDK 依赖
+server = [
+  "fastapi>=0.100.0",
+  "uvicorn[standard]>=0.20.0",
+  "pydantic>=2.0.0",
+  "redis>=4.0.0",
+  "psutil>=5.9.0",
+]
+
+# 完整RL训练需要的额外依赖
+rl = [
+  "stable-baselines3[extra]>=2.0.0",
+  "torch",
+  "tensorboard>=2.8.0",
+  "matplotlib>=3.5.0",
+  "pandas>=1.3.0",
+  "seaborn>=0.11.0"
+]
+
+# 所有功能
+all = [
+  "rl-env-engine[server]",
+  "rl-env-engine[rl]",
+]
+
+dev = [
+  "black",
+  "isort",
+  "mypy",
+  "mypy-protobuf",
+  "ruff",
+  "pytest",
+  "grpcio-tools",
+  "httpx",  # for testing FastAPI
+]
+
+[project.urls]
+Homepage = "https://github.com/jelech/rl_env_engine"
+Repository = "https://github.com/jelech/rl_env_engine"
+Issues = "https://github.com/jelech/rl_env_engine/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["rl_env_engine*"]
+
+# 确保类型存根文件被包含在包中
+[tool.setuptools.package-data]
+rl_env_engine = ["*.pyi", "py.typed"]
+
+# Pyright/Pylance 类型检查配置
+[tool.pyright]
+include = ["src/rl_env_engine"]
+exclude = ["**/__pycache__", "**/.*"]
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+# MyPy 类型检查配置
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = false
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.black]
+line-length = 120
+target-version = ["py38", "py39", "py310", "py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 120

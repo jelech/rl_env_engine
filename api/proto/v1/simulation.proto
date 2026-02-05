@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+package simulation.v1;
+
+option go_package = "github.com/jelech/rl_env_engine/go/pkg/api/v1";
+
+import "google/protobuf/struct.proto";
+
+// SimulationService 定义仿真服务的gRPC接口
+service SimulationService {
+  // GetInfo 获取服务信息
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+  
+  // CreateEnvironment 创建环境
+  rpc CreateEnvironment(CreateEnvironmentRequest) returns (CreateEnvironmentResponse);
+  
+  // ResetEnvironment 重置环境
+  rpc ResetEnvironment(ResetEnvironmentRequest) returns (ResetEnvironmentResponse);
+  
+  // StepEnvironment 执行一步仿真
+  rpc StepEnvironment(StepEnvironmentRequest) returns (StepEnvironmentResponse);
+  
+  // CloseEnvironment 关闭环境
+  rpc CloseEnvironment(CloseEnvironmentRequest) returns (CloseEnvironmentResponse);
+  
+  // GetSpaces 获取环境的动作空间和观察空间定义
+  rpc GetSpaces(GetSpacesRequest) returns (GetSpacesResponse);
+  
+  // StreamStep 流式执行仿真步骤 (可选，用于实时仿真)
+  rpc StreamStep(stream StepEnvironmentRequest) returns (stream StepEnvironmentResponse);
+}
+
+// 基础消息类型
+message GetInfoRequest {}
+
+message GetInfoResponse {
+  repeated string scenarios = 1;
+  repeated string env_ids = 2;
+  google.protobuf.Struct info = 3;
+  string version = 4;
+  string name = 5;
+}
+
+message CreateEnvironmentRequest {
+  string env_id = 1;
+  string scenario = 2;
+  google.protobuf.Struct config = 3;
+}
+
+message CreateEnvironmentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ResetEnvironmentRequest {
+  string env_id = 1;
+}
+
+message ResetEnvironmentResponse {
+  repeated Observation observations = 1;
+  google.protobuf.Struct info = 2;
+}
+
+message StepEnvironmentRequest {
+  string env_id = 1;
+  repeated Action actions = 2;
+}
+
+message StepEnvironmentResponse {
+  repeated Observation observations = 1;
+  repeated double rewards = 2;
+  repeated bool done = 3;
+  google.protobuf.Struct info = 4;
+}
+
+message CloseEnvironmentRequest {
+  string env_id = 1;
+}
+
+message CloseEnvironmentResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 数据类型定义
+message Observation {
+  repeated double data = 1;
+  google.protobuf.Struct metadata = 2;
+}
+
+message Action {
+  // 通用的action数据，支持多种类型
+  oneof data {
+    // 单个数值（最常见）
+    double float_value = 1;
+    int64 int_value = 2;
+    bool bool_value = 3;
+    
+    // 数组类型
+    FloatArray float_array = 4;
+    IntArray int_array = 5;
+    BoolArray bool_array = 6;
+    
+    // 字符串类型（用于离散动作）
+    string string_value = 7;
+    
+    // 原始字节数据（用于复杂自定义类型）
+    bytes raw_data = 8;
+  }
+}
+
+// 辅助消息类型
+message FloatArray {
+  repeated double values = 1;
+}
+
+message IntArray {
+  repeated int64 values = 1;
+}
+
+message BoolArray {
+  repeated bool values = 1;
+}
+
+// 空间定义相关消息
+message GetSpacesRequest {
+  string env_id = 1;   // 指定特定env, 由于可以通过config配置设置action space
+}
+
+message GetSpacesResponse {
+  ActionSpace action_space = 1;
+  ObservationSpace observation_space = 2;
+}
+
+message ActionSpace {
+  SpaceType type = 1;
+  repeated double low = 2;   // 最小值 (每维度一个值)
+  repeated double high = 3;  // 最大值 (每维度一个值)
+  repeated int32 shape = 4;  // 形状: [action_dimensions] 
+                             // Discrete: [] (标量)
+                             // Box: [action_dim] 
+                             // MultiDiscrete: [num_discrete_groups]
+                             // MultiBinary: [num_binary_actions]
+  string dtype = 5;          // 数据类型: "int32", "float32", etc.
+  
+  // 支持离散浮点值
+  repeated double discrete_values = 6; // 当type=DISCRETE时，可选的具体离散值列表
+                                       // 例如: [1.0, 1.1, 1.5, 2.0, 2.5]
+                                       // 如果为空，则使用标准的[0, 1, 2, ..., high]
+}
+
+message ObservationSpace {
+  SpaceType type = 1;
+  repeated double low = 2;   // 最小值
+  repeated double high = 3;  // 最大值
+  repeated int32 shape = 4;  // 形状
+  string dtype = 5;          // 数据类型
+}
+
+enum SpaceType {
+  BOX = 0;            // 连续空间 (gym.spaces.Box) - shape=[dims], 每维有low/high
+  DISCRETE = 1;       // 离散空间 (gym.spaces.Discrete) - shape=[], high=[n-1]表示n个动作
+                      // 如果discrete_values非空，则动作值来自该列表
+  MULTI_DISCRETE = 2; // 多离散空间 - shape=[groups], high=[n1-1,n2-1,...]每组动作数
+  MULTI_BINARY = 3;   // 多二进制空间 - shape=[bits], low/high全为[0]/[1]
+  DISCRETE_FLOAT = 4; // 离散浮点空间 - 预定义的浮点值列表，使用discrete_values字段
+}
