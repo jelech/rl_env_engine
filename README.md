@@ -81,6 +81,20 @@ env.close()
 
 ## Installation
 
+### Local Development Installation
+
+If you want to use the framework in your local projects without publishing to PyPI:
+
+```bash
+# 1. Navigate to the python directory
+cd python
+
+# 2. Install in editable mode
+pip install -e .
+```
+
+This allows you to import `rl_env_engine` in your other projects while keeping the ability to modify the source code.
+
 ### Go SDK
 
 ```bash
@@ -99,6 +113,25 @@ pip install rl-env-engine
 
 # With RL dependencies (stable-baselines3, torch, etc.)
 pip install rl-env-engine[rl]
+```
+
+## Git Workflow
+
+To push your changes to a remote repository (e.g., GitHub):
+
+```bash
+# 1. Initialize git repository (if not already done)
+git init
+
+# 2. Add remote repository
+git remote add origin https://github.com/yourusername/rl_env_engine.git
+
+# 3. Stage and commit changes
+git add .
+git commit -m "Initial commit"
+
+# 4. Push to GitHub
+git push -u origin main
 ```
 
 ## Available Make Commands
