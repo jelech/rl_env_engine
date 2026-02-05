@@ -125,6 +125,37 @@ model.save("my_model")
 env.close()
 ```
 
+### 本地模式（C-shared Library，高性能）
+
+除了 gRPC 模式，现在支持通过 C-shared library (.so) 在同一进程内直接调用 Go 环境，从而获得更高的性能（无需网络开销）。
+
+#### 1. 构建共享库
+
+在 `simulations` 项目中：
+
+```bash
+make lib
+# 生成 bin/libsimulations.so
+```
+
+#### 2. 使用 LocalEnv
+
+```python
+from rl_env_engine_client import LocalEnv
+
+# 初始化环境，指向编译好的 .so 文件
+env = LocalEnv(
+    lib_path="/path/to/simulations/bin/libsimulations.so",
+    scenario="CacheOrder",
+    config={"env_name": "demo", "sim_length": 30}
+)
+
+obs, info = env.reset()
+action = env.action_space.sample()
+obs, reward, terminated, truncated, info = env.step(action)
+# ...
+```
+
 ### 基础 gRPC 客户端示例
 ```python
 import grpc

@@ -9,15 +9,17 @@
     pip install -e "python_client[rl]"
 
 使用示例:
-    from rl_env_engine_client import GrpcEnv
+    from rl_env_engine_client import GrpcEnv, LocalEnv
 """
 
 __all__ = [
     "GrpcEnv",
+    "LocalEnv",
     "SimulationGrpcClient",
 ]
 
 __version__ = "0.1.0"
 
 from .grpc_env import GrpcEnv  # noqa: E402
+from .local_env import LocalEnv  # noqa: E402
 from .grpc_client import SimulationGrpcClient  # noqa: E402

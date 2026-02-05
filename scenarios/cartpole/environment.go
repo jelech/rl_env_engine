@@ -117,15 +117,26 @@ func (e *CartPoleEnvironment) Step(ctx context.Context, actions []core.Action) (
 
 	// 尝试从GenericAction中提取
 	if genericAction, ok := actions[0].(*core.GenericAction); ok {
-		actionValue, err := genericAction.GetFloat64()
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to extract action value: %w", err)
-		}
-		// 将连续动作转换为离散动作
-		if actionValue < 0.5 {
-			force = -e.forceMag
+		// 优先尝试作为切片处理
+		actionSlice, err := genericAction.GetFloat64Slice()
+		if err == nil && len(actionSlice) > 0 {
+			if actionSlice[0] < 0.5 {
+				force = -e.forceMag
+			} else {
+				force = e.forceMag
+			}
 		} else {
-			force = e.forceMag
+			// 回退到单个值处理
+			actionValue, err := genericAction.GetFloat64()
+			if err != nil {
+				return nil, nil, nil, fmt.Errorf("failed to extract action value: %w", err)
+			}
+			// 将连续动作转换为离散动作
+			if actionValue < 0.5 {
+				force = -e.forceMag
+			} else {
+				force = e.forceMag
+			}
 		}
 	} else if cartPoleAction, ok := actions[0].(*CartPoleAction); ok {
 		// 使用CartPole专用动作

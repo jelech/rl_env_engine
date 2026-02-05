@@ -85,7 +85,7 @@ func Reset(id int) int {
 }
 
 // Step 执行一步环境仿真
-func Step(id int, actionData []float64) int {
+func Step(id int, actionData []float64, numAgents int) int {
 	envMu.RLock()
 	env, ok := Envs[id]
 	envMu.RUnlock()
@@ -94,11 +94,32 @@ func Step(id int, actionData []float64) int {
 	}
 
 	// 构造 Action
-	// 由于 Core 的 Action 接口比较通用，这里我们假设使用 GenericAction
-	// CacheRL 环境的实现 (env.go) 已经支持识别 core.GenericAction
 	var actions []core.Action
-	act := core.NewGenericAction(actionData)
-	actions = append(actions, act)
+
+	if numAgents <= 1 {
+		// 单智能体或全局 Action
+		act := core.NewGenericAction(actionData)
+		actions = append(actions, act)
+	} else {
+		// 多智能体：切分 actionData
+		if len(actionData) == 0 {
+			// 没有动作数据，可能需要默认行为或者报错
+			// 这里我们允许空动作列表，如果环境支持的话
+		} else if len(actionData)%numAgents != 0 {
+			return -3 // Action 数据长度无法被 numAgents 整除
+		} else {
+			stride := len(actionData) / numAgents
+			for i := 0; i < numAgents; i++ {
+				start := i * stride
+				end := (i + 1) * stride
+				subAction := actionData[start:end]
+				// 这里我们需要 copy 数据吗？GenericAction 可能会持有引用
+				// 为了安全，Go 的 slice 引用通常没问题，因为 actionData 来自 C 拷贝的 Go slice
+				act := core.NewGenericAction(subAction)
+				actions = append(actions, act)
+			}
+		}
+	}
 
 	// 执行 Step
 	obs, rewards, dones, err := env.Step(context.Background(), actions)
@@ -170,6 +191,38 @@ func GetDone(id int, dest unsafe.Pointer, maxLen int) int {
 	return count
 }
 
+// GetSpacesJSON 获取动作空间和观察空间的 JSON 描述
+func GetSpacesJSON(id int, dest unsafe.Pointer, maxLen int) int {
+	envMu.RLock()
+	env, ok := Envs[id]
+	envMu.RUnlock()
+	if !ok {
+		return -1 // 环境 ID 无效
+	}
+
+	spaces := env.GetSpaces()
+	bytes, err := json.Marshal(spaces)
+	if err != nil {
+		return -2 // 序列化失败
+	}
+
+	if len(bytes) > maxLen {
+		return -3 // 缓冲区太小
+	}
+
+	// 复制到 C char*
+	cArray := (*[1 << 30]byte)(dest)
+	for i, b := range bytes {
+		cArray[i] = b
+	}
+	// 添加 null terminator，虽然我们返回了长度，但为了 C 字符串兼容性
+	if len(bytes) < maxLen {
+		cArray[len(bytes)] = 0
+	}
+
+	return len(bytes)
+}
+
 // FlattenObservations 辅助函数：将观测对象列表平铺为 float64 数组
 func FlattenObservations(obs []core.Observation) []float64 {
 	var flat []float64
@@ -187,6 +240,7 @@ func copyToC(src []float64, dest unsafe.Pointer, maxLen int) int {
 
 	// 我们将 dest 视为 *float64 (C double 数组)
 	// 使用 unsafe 将 C 指针转换为 Go 的大数组指针以便索引访问
+	// 注意：[1 << 30]只是一个类型转换的技巧，并不会分配内存
 	cArray := (*[1 << 30]float64)(dest)
 	count := len(src)
 	if count > maxLen {

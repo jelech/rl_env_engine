@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/jelech/rl_env_engine/core"
@@ -17,6 +18,7 @@ type GymAPI struct {
 	engine       *core.SimulationEngine
 	environments map[string]core.Environment
 	configs      map[string]core.Config
+	registry     *ServiceRegistry
 }
 
 // ResetRequest 重置请求
@@ -79,6 +81,29 @@ func NewGymAPI() *GymAPI {
 }
 
 func (api *GymAPI) StartServer(port int) error {
+	// Start service registry
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:6379/0"
+	}
+
+	meta := ServiceMetadata{
+		Addr:      GetAdvertisedAddr(port),
+		Scenarios: api.engine.ListScenarios(),
+		Lang:      "go",
+		Encodings: []string{"raw-bytes", "json"},
+	}
+
+	registry, err := NewServiceRegistry(redisURL, meta)
+	if err != nil {
+		log.Printf("Warning: Failed to connect to Redis: %v. Service discovery disabled.", err)
+	} else {
+		api.registry = registry
+		registry.Start()
+		defer registry.Stop()
+		log.Printf("Service registered at %s", meta.Addr)
+	}
+
 	mux := http.NewServeMux()
 
 	// 注册路由
@@ -87,6 +112,7 @@ func (api *GymAPI) StartServer(port int) error {
 	mux.HandleFunc("/create", api.handleCreateEnv)
 	mux.HandleFunc("/reset", api.handleReset)
 	mux.HandleFunc("/step", api.handleStep)
+	mux.HandleFunc("/v1/step", api.handleStepBinary) // Add binary endpoint
 	mux.HandleFunc("/close", api.handleClose)
 
 	// 添加CORS中间件
