@@ -6,40 +6,43 @@ A flexible simulation framework for reinforcement learning with multi-language S
 
 ```
 rl_env_engine/
-├── api/                          # Protocol definitions (source of truth)
-│   ├── openapi/
-│   │   └── v1/
-│   │       └── simulation.yaml # OpenAPI/Swagger definition
-│   └── proto/
-│       └── v1/
-│           └── simulation.proto  # gRPC service definition
+├── api/proto/v1/                 # Protocol definitions (source of truth)
+│   ├── simulation.proto          # SimulationService
+│   ├── collector.proto           # CollectorService + Trajectory
+│   └── weightsync.proto          # WeightSyncService
 │
-├── go/                           # Go module (independent)
-│   ├── go.mod                    # github.com/jelech/rl_env_engine/go
-│   ├── cmd/
-│   │   └── server/               # gRPC server entry point
-│   ├── internal/                 # Private implementation
-│   │   ├── server/               # Server implementation
-│   │   └── scenarios/            # Built-in scenarios
-│   └── pkg/                      # Public SDK
+├── go/                           # Go module
+│   ├── cmd/server/               # gRPC server entry point
+│   ├── internal/
+│   │   ├── server/               # gRPC server (keepalive + msg size 配置)
+│   │   └── scenarios/            # 内置场景 (simple, cartpole)
+│   └── pkg/
 │       ├── api/v1/               # Generated protobuf code
 │       ├── client/               # Go Client SDK
-│       ├── core/                 # Core interfaces
-│       └── sdk/                  # Server SDK
+│       ├── collector/            # Collector driver + SKU 分配策略
+│       ├── core/                 # 核心接口 + Trajectory 对象池
+│       └── weightsync/           # Redis 权重同步器
 │
-├── python/                       # Python package (independent)
-│   ├── pyproject.toml            # rl-env-engine
-│   ├── README.md
-│   └── src/
-│       └── rl_env_engine/
-│           ├── client/           # Python Client SDK
-│           └── generated/        # Generated protobuf code
+├── python/src/rl_env_engine/     # Python package
+│   ├── client/                   # GrpcEnv, LocalEnv, SimulationSDK
+│   ├── server/                   # FastAPI Server, TaskManager
+│   ├── learner/                  # 训练框架
+│   │   ├── models.py             # PolicyNetwork + ValueNetwork
+│   │   ├── ppo.py                # PPO 算法
+│   │   ├── buffer.py             # RolloutBuffer + GAE
+│   │   ├── distributed.py        # DDP 训练上下文
+│   │   ├── trainer.py            # 训练主循环
+│   │   ├── model_factory.py      # Checkpoint/ONNX/序列化
+│   │   ├── s3_transport.py       # S3 trajectory IO
+│   │   └── logger.py             # TensorBoard + Prometheus
+│   ├── collector/                # Python 端 Collector
+│   └── generated/                # Generated protobuf code
 │
-├── scripts/
-│   └── gen_proto.sh              # Generate Go + Python code
-│
-├── Makefile                      # Unified build system
-└── README.md
+├── example/training/             # 端到端训练示例
+├── Dockerfile.go                 # Go 仿真服务镜像 (<30MB)
+├── Dockerfile.py                 # Python 训练镜像 (PyTorch+CUDA)
+├── docker-compose.yml            # Redis + Go + Trainer 全栈
+└── scripts/gen_proto.sh          # Proto 代码生成
 ```
 
 ## Quick Start
@@ -143,24 +146,31 @@ pip install "rl-env-engine[server] @ git+https://github.com/jelech/rl_env_engine
 
 ```bash
 make help          # Show all available commands
-
-# Proto generation
 make proto         # Generate Go and Python protobuf code
-
-# Go commands
-make build-go      # Build Go server
-make run-server    # Run gRPC server
-make test-go       # Run Go tests
-
-# Python commands
-make install-python  # Install Python package
-make build-python    # Build Python wheel
-make test-python     # Run Python tests
-
-# Combined
 make build         # Build everything
-make test          # Run all tests
+make test          # Run all tests (Go + Python)
+make run-server    # Run gRPC server
 make clean         # Clean build artifacts
+```
+
+## Training Example
+
+```bash
+# 本地 CartPole 训练 (无需 Go server)
+python example/training/run_cartpole_training.py
+
+# DDP 多卡训练
+torchrun --nproc_per_node=4 example/training/run_cartpole_training.py
+```
+
+## Docker
+
+```bash
+# 全栈启动 (Redis + Go仿真 + Python训练)
+docker compose up --build
+
+# 仅启动仿真服务
+docker compose up redis simulation-server
 ```
 
 ## Built-in Scenarios

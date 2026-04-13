@@ -51,22 +51,25 @@ fi
 # Ensure Go bin is in PATH
 export PATH="$PATH:$(go env GOPATH)/bin"
 
-protoc \
-    --go_out="$GO_OUT_DIR" \
-    --go_opt=paths=source_relative \
-    --go-grpc_out="$GO_OUT_DIR" \
-    --go-grpc_opt=paths=source_relative \
-    -I "$PROTO_DIR" \
-    "$PROTO_DIR/simulation.proto"
+for proto_file in "$PROTO_DIR"/*.proto; do
+    proto_name=$(basename "$proto_file" .proto)
+    echo "  Generating Go code for $proto_name.proto..."
+    protoc \
+        --go_out="$GO_OUT_DIR" \
+        --go_opt=paths=source_relative \
+        --go-grpc_out="$GO_OUT_DIR" \
+        --go-grpc_opt=paths=source_relative \
+        -I "$PROTO_DIR" \
+        "$proto_file"
 
-if [ $? -eq 0 ]; then
-    echo "✅ Go protobuf files generated successfully!"
-    echo "   $GO_OUT_DIR/simulation.pb.go"
-    echo "   $GO_OUT_DIR/simulation_grpc.pb.go"
-else
-    echo "❌ Failed to generate Go protobuf files"
-    exit 1
-fi
+    if [ $? -eq 0 ]; then
+        echo "  ✅ $proto_name.pb.go generated"
+    else
+        echo "  ❌ Failed to generate $proto_name"
+        exit 1
+    fi
+done
+echo "✅ All Go protobuf files generated successfully!"
 
 # Generate Python code
 echo ""
@@ -78,34 +81,38 @@ if ! python3 -c "import grpc_tools.protoc" &> /dev/null; then
     pip install grpcio-tools
 fi
 
-python3 -m grpc_tools.protoc \
-    --python_out="$PYTHON_OUT_DIR" \
-    --grpc_python_out="$PYTHON_OUT_DIR" \
-    -I "$PROTO_DIR" \
-    "$PROTO_DIR/simulation.proto"
+for proto_file in "$PROTO_DIR"/*.proto; do
+    proto_name=$(basename "$proto_file" .proto)
+    echo "  Generating Python code for $proto_name.proto..."
+    python3 -m grpc_tools.protoc \
+        --python_out="$PYTHON_OUT_DIR" \
+        --grpc_python_out="$PYTHON_OUT_DIR" \
+        -I "$PROTO_DIR" \
+        "$proto_file"
 
-if [ $? -eq 0 ]; then
-    echo "✅ Python protobuf files generated successfully!"
-    echo "   $PYTHON_OUT_DIR/simulation_pb2.py"
-    echo "   $PYTHON_OUT_DIR/simulation_pb2_grpc.py"
-else
-    echo "❌ Failed to generate Python protobuf files"
-    exit 1
-fi
+    if [ $? -eq 0 ]; then
+        echo "  ✅ ${proto_name}_pb2.py generated"
+    else
+        echo "  ❌ Failed to generate $proto_name"
+        exit 1
+    fi
+done
+echo "✅ All Python protobuf files generated successfully!"
 
 # Generate Python type stubs (optional)
 echo ""
 echo "=== Generating Python Type Stubs (optional) ==="
 
 if python3 -c "import mypy_protobuf" &> /dev/null; then
-    python3 -m grpc_tools.protoc \
-        --mypy_out="$PYTHON_OUT_DIR" \
-        -I "$PROTO_DIR" \
-        "$PROTO_DIR/simulation.proto"
+    for proto_file in "$PROTO_DIR"/*.proto; do
+        python3 -m grpc_tools.protoc \
+            --mypy_out="$PYTHON_OUT_DIR" \
+            -I "$PROTO_DIR" \
+            "$proto_file"
+    done
     
     if [ $? -eq 0 ]; then
         echo "✅ Type stub files generated successfully!"
-        echo "   $PYTHON_OUT_DIR/simulation_pb2.pyi"
     else
         echo "Warning: Failed to generate type stubs"
     fi

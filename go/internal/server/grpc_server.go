@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/jelech/rl_env_engine/go/internal/scenarios/cartpole"
 	"github.com/jelech/rl_env_engine/go/internal/scenarios/simple"
 	"github.com/jelech/rl_env_engine/go/pkg/core"
 	pb "github.com/jelech/rl_env_engine/go/pkg/api/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -50,10 +52,20 @@ func (s *GrpcServer) StartGrpcServer(port int) error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(64*1024*1024), // 64MB
+		grpc.MaxSendMsgSize(64*1024*1024),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time:    30 * time.Second,
+			Timeout: 5 * time.Second,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             10 * time.Second,
+			PermitWithoutStream: true,
+		}),
+	)
 	pb.RegisterSimulationServiceServer(grpcServer, s)
 
-	// Enable reflection for debugging
 	reflection.Register(grpcServer)
 
 	log.Printf("Starting gRPC Simulation server on port %d", port)

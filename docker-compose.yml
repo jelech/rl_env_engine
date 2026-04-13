@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  simulation-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.go
+    ports:
+      - "9090:9090"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ADVERTISED_IP=simulation-server
+      - GOGC=200
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 2G
+
+  trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile.py
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - SIMULATION_HOST=simulation-server
+      - SIMULATION_PORT=9090
+    depends_on:
+      redis:
+        condition: service_healthy
+      simulation-server:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package simulation.v1;
+
+option go_package = "github.com/jelech/rl_env_engine/go/pkg/api/v1";
+
+// WeightSyncService 定义权重同步的 gRPC 接口
+// 基于 Redis pub/sub 的版本化权重分发系统
+service WeightSyncService {
+  // SetWeights 上传新版本的模型权重 (由 Learner 调用)
+  rpc SetWeights(SetWeightsRequest) returns (SetWeightsResponse);
+
+  // GetWeights 拉取指定版本的模型权重 (由 Collector 调用)
+  rpc GetWeights(GetWeightsRequest) returns (GetWeightsResponse);
+
+  // Subscribe 订阅权重更新通知 (server-side streaming)
+  rpc Subscribe(SubscribeRequest) returns (stream WeightUpdate);
+
+  // GetVersion 查询当前最新版本号
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+}
+
+// ==================== WeightData ====================
+
+message WeightData {
+  int64 version = 1;
+  bytes data = 2;           // torch.save 的二进制输出
+  string model_key = 3;     // 模型标识 (如 "policy", "value")
+  string format = 4;        // "pytorch" / "onnx"
+  int64 timestamp = 5;
+  map<string, string> metadata = 6;
+}
+
+// ==================== SetWeights ====================
+
+message SetWeightsRequest {
+  string model_key = 1;
+  WeightData weight_data = 2;
+}
+
+message SetWeightsResponse {
+  bool success = 1;
+  int64 version = 2;
+}
+
+// ==================== GetWeights ====================
+
+message GetWeightsRequest {
+  string model_key = 1;
+  int64 version = 2;  // 0 表示获取最新版本
+}
+
+message GetWeightsResponse {
+  WeightData weight_data = 1;
+  bool found = 2;
+}
+
+// ==================== Subscribe ====================
+
+message SubscribeRequest {
+  string model_key = 1;
+  int64 from_version = 2;  // 从哪个版本开始订阅 (0 = 从最新开始)
+}
+
+message WeightUpdate {
+  int64 version = 1;
+  string model_key = 2;
+  int64 timestamp = 3;
+  // 不包含权重数据本身，收到通知后通过 GetWeights 拉取
+}
+
+// ==================== GetVersion ====================
+
+message GetVersionRequest {
+  string model_key = 1;
+}
+
+message GetVersionResponse {
+  int64 version = 1;
+  int64 timestamp = 2;
+}

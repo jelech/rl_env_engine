@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package simulation.v1;
+
+option go_package = "github.com/jelech/rl_env_engine/go/pkg/api/v1";
+
+import "simulation.proto";
+
+// CollectorService 定义 Collector 的 gRPC 接口
+// Learner 通过此接口控制 Collector 的采集行为
+service CollectorService {
+  // Collect 通知 collector 使用指定版本权重开始一轮采集
+  rpc Collect(CollectRequest) returns (CollectResponse);
+
+  // GetBuffer 获取 collector 采集完成的 trajectory 数据
+  rpc GetBuffer(GetBufferRequest) returns (GetBufferResponse);
+
+  // UpdateWeights 向 collector 推送新的模型权重
+  rpc UpdateWeights(UpdateWeightsRequest) returns (UpdateWeightsResponse);
+
+  // GetStats 获取 collector 运行统计
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+}
+
+// ==================== Trajectory 数据结构 ====================
+
+message Transition {
+  repeated float state = 1;
+  repeated float action = 2;
+  float reward = 3;
+  repeated float next_state = 4;
+  bool done = 5;
+  float log_prob = 6;
+  float value = 7;
+}
+
+message Trajectory {
+  string env_id = 1;
+  repeated Transition transitions = 2;
+  int32 episode_length = 3;
+  float episode_reward = 4;
+}
+
+message BufferData {
+  repeated Trajectory trajectories = 1;
+  int64 weight_version = 2;
+  int64 total_transitions = 3;
+  string collector_id = 4;
+}
+
+// ==================== Collect ====================
+
+message CollectRequest {
+  int64 weight_version = 1;
+  int32 num_episodes = 2;
+  string s3_upload_path = 3;  // 可选：直接上传到 S3 的路径
+}
+
+message CollectResponse {
+  bool success = 1;
+  string message = 2;
+  int64 total_transitions = 3;
+  float total_reward = 4;
+  double elapsed_seconds = 5;
+  string s3_path = 6;  // 如果通过 S3 上传，返回路径
+}
+
+// ==================== GetBuffer ====================
+
+message GetBufferRequest {
+  string collector_id = 1;
+  int64 weight_version = 2;
+}
+
+message GetBufferResponse {
+  BufferData buffer = 1;
+}
+
+// ==================== UpdateWeights ====================
+
+message UpdateWeightsRequest {
+  int64 version = 1;
+  bytes weights_data = 2;  // torch.save 的二进制输出
+  string model_key = 3;
+}
+
+message UpdateWeightsResponse {
+  bool success = 1;
+  int64 current_version = 2;
+}
+
+// ==================== GetStats ====================
+
+message GetStatsRequest {
+  string collector_id = 1;
+}
+
+message GetStatsResponse {
+  string collector_id = 1;
+  int64 episodes_completed = 2;
+  int64 total_steps = 3;
+  double steps_per_second = 4;
+  int64 current_weight_version = 5;
+  int32 active_workers = 6;
+  double avg_episode_reward = 7;
+  double avg_episode_duration_seconds = 8;
+  int64 buffer_size = 9;
+}
