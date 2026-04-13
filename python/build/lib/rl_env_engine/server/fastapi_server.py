@@ -28,7 +28,7 @@ class CreateSessionRequest(BaseModel):
     """创建会话请求"""
 
     session_id: str
-    scenario: str
+    scenario: Optional[str] = None  # 可选：单场景服务可省略
     config: Optional[Dict[str, Any]] = None
     # 支持多日期数据（用于批量仿真）
     dates: Optional[Dict[str, Dict[str, str]]] = None  # {date: {file_name: base64_data}}
@@ -179,6 +179,23 @@ class SessionManager:
 # ========================= Create App Factory =========================
 
 
+def _run_step_task(
+    scenario: BaseScenario,
+    env: Any,
+    action: Any,
+    date: Optional[str] = None,
+    date_data: Optional[Dict] = None,
+) -> Any:
+    """
+    步进任务执行函数（顶层定义以支持 pickle）
+    """
+    kwargs = {}
+    if date:
+        kwargs["date"] = date
+        kwargs["date_data"] = date_data
+    return scenario.step(env, action, **kwargs)
+
+
 def create_app(
     scenarios: List[BaseScenario],
     scenario_name: str = "rl_env_engine",
@@ -296,11 +313,22 @@ def create_app(
     @app.post("/create")
     async def create_session(request: CreateSessionRequest):
         """创建会话"""
-        scenario = scenario_registry.get(request.scenario)
+        # scenario 字段可选：单场景服务自动推断
+        scenario_key = request.scenario
+        if not scenario_key:
+            if len(scenario_registry) == 1:
+                scenario_key = next(iter(scenario_registry))
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Multiple scenarios available, please specify one: {list(scenario_registry.keys())}",
+                )
+
+        scenario = scenario_registry.get(scenario_key)
         if not scenario:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unknown scenario: {request.scenario}. Available: {list(scenario_registry.keys())}",
+                detail=f"Unknown scenario: {scenario_key}. Available: {list(scenario_registry.keys())}",
             )
 
         try:
@@ -354,7 +382,16 @@ def create_app(
         try:
             scenario: BaseScenario = session["scenario"]
             env = session["env"]
-            result = scenario.step(env, request.action)
+
+            # 从 action 中提取 date 信息，传递 date_data
+            kwargs = {}
+            action = request.action
+            if isinstance(action, dict) and "date" in action:
+                date = action["date"]
+                kwargs["date"] = date
+                kwargs["date_data"] = session["dates"].get(date, {})
+
+            result = scenario.step(env, action, **kwargs)
             return result
         except Exception as e:
             logger.exception(f"Failed to step environment: {e}")
@@ -399,18 +436,16 @@ def create_app(
             # 创建任务
             task_id = task_manager.create_task(metadata={"session_id": session_id, "date": date})
 
-            # 定义执行函数
-            def run_step():
-                scenario: BaseScenario = session["scenario"]
-                env = session["env"]
-                kwargs = {}
-                if date:
-                    kwargs["date"] = date
-                    kwargs["date_data"] = session["dates"].get(date, {})
-                return scenario.step(env, action, **kwargs)
-
             # 异步提交
-            await task_manager.submit_async(run_step, task_id=task_id)
+            await task_manager.submit_async(
+                _run_step_task,
+                scenario=session["scenario"],
+                env=session["env"],
+                action=action,
+                date=date,
+                date_data=session["dates"].get(date, {}) if date else None,
+                task_id=task_id,
+            )
 
             return {"status": "submitted", "task_id": task_id, "date": date}
 

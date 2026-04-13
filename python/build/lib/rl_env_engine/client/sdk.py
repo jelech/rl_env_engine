@@ -118,18 +118,21 @@ class SimulationSDK:
     def create_sessions(
         self,
         batch_size: int,
-        scenario: str,
+        scenario: str = None,
         config: Dict[str, Any] = None,
         data_dir: str = None,
+        dates_data: Dict[str, Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
         批量创建会话
         
         Args:
             batch_size: 需要创建的会话数量
-            scenario: 场景名称
+            scenario: 场景名称（单场景服务可省略）
             config: 环境配置
-            data_dir: 数据目录（可选，用于加载多日期数据）
+            data_dir: 数据目录（可选，自动扫描加载）
+            dates_data: 预加载的日期数据（可选，优先级高于 data_dir）
+                        格式: {date: {file_key: base64_content}}
             
         Returns:
             {"status": "created", "session_infos": {...}, "dates": [...]}
@@ -145,9 +148,10 @@ class SimulationSDK:
                 f"Creating {actual_batch} sessions (others will be queued)."
             )
         
-        # 加载数据（如果指定了数据目录）
-        dates_data = {}
-        if data_dir:
+        # 加载数据：dates_data 优先，其次 data_dir 自动扫描
+        if dates_data is None:
+            dates_data = {}
+        if not dates_data and data_dir:
             logger.info(f"Loading data from {data_dir}...")
             dates_data = self._load_all_dates(data_dir)
             logger.info(f"Loaded {len(dates_data)} dates: {list(dates_data.keys())}")
